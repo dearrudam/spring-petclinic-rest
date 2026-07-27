@@ -18,7 +18,6 @@
     </parent>
 
     <properties>
-
         <!-- Third-party libraries -->
         <spring-data-jdbc.version>1.2.1.RELEASE</spring-data-jdbc.version>
         <springdoc-openapi-ui.version>3.0.3</springdoc-openapi-ui.version>
@@ -40,6 +39,7 @@
         <maven.site-plugin.version>3.22.0</maven.site-plugin.version>
         <maven.spotbugs-plugin.version>4.8.6.6</maven.spotbugs-plugin.version>
         <maven.version>3.9.9</maven.version>
+        <maven.compiler.release>25</maven.compiler.release>
 
         <!-- Docker -->
         <docker.jib-maven-plugin.version>3.5.1</docker.jib-maven-plugin.version>
@@ -319,6 +319,7 @@
                                 <!-- XML format for SonarCloud -->
                                 <!-- https://docs.sonarsource.com/sonarqube-cloud/enriching/test-coverage/java-test-coverage/ -->
                                 <format>XML</format>
+                                <format>HTML</format>
                             </formats>
                         </configuration>
                     </execution>
