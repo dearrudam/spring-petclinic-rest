@@ -1,0 +1,31 @@
+# AGENTS.md
+
+## Commands
+
+- Use the Maven wrapper: `./mvnw`, not system `mvn`; the build enforces Maven `3.9.9` and compiles with Java release `25`.
+- Full verification: `./mvnw verify` runs OpenAPI generation, compilation, tests, JaCoCo report, and coverage checks.
+- Focused Java test: `./mvnw -Dtest=OwnerRestControllerV1Tests test` or `./mvnw -Dtest=OwnerRestControllerV1Tests#testMethod test`.
+- Run locally: `./mvnw spring-boot:run`; default URL is `http://localhost:9966/petclinic/`.
+- Build container image with Jib only when needed: `./mvnw jib:dockerBuild` or `./mvnw jib:build`.
+
+## Generated API Contract
+
+- `src/main/resources/openapi.yml` is the source for generated REST API interfaces and DTOs.
+- Generated code lives under `target/generated-sources/openapi/src/main/java` and is added during `generate-sources`; do not edit generated `rest/api` or `rest/dto` classes directly.
+- Controllers in `src/main/java/.../rest/controller/v1` and `v2` implement generated interfaces from `org.springframework.samples.petclinic.rest.api`.
+- MapStruct mappers in `src/main/java/.../mapper` convert between domain models and generated DTOs; annotation processing uses Spring components by default.
+
+## Runtime Profiles
+
+- The app expects two active profiles: one database profile (`h2`, `hsqldb`, `mysql`, `postgres`) plus one repository profile (`jdbc`, `jpa`, `spring-data-jpa`).
+- Default runtime profiles are `h2,spring-data-jpa`; default test profiles are `hsqldb,spring-data-jpa` unless a test overrides them with `@ActiveProfiles`.
+- SQL init files are selected from `src/main/resources/db/${spring.sql.init.platform}/schema.sql` and `data.sql`; add schema/data changes for every supported database when behavior depends on them.
+- Security is enabled by default through `petclinic.security.enable=true`; use `--spring-boot.run.arguments=--petclinic.security.enable=false` only for local/manual checks that need unauthenticated endpoints.
+
+## Test Notes
+
+- Controller tests are Spring Boot tests wired with `ApplicationTestConfig` and `@MockitoBean`, then exercised through standalone `MockMvc`; follow that pattern for new controller coverage.
+- Service tests intentionally cover multiple repository/database profile combinations; choose the matching existing `ClinicService*Tests` or `UserService*Tests` class when narrowing failures.
+- JaCoCo excludes generated OpenAPI `rest/api` and `rest/dto` packages and enforces `0.85` line and `0.66` branch coverage on `verify`.
+- Postman regression tests live in `src/test/postman` and require the app running locally plus Node.js and `jq`; run with `zsh src/test/postman/postman-tests.sh` from the repo root if the script is not executable.
+- JMeter performance tests live in `src/test/jmeter` and require the app running locally plus JMeter `5.6.3+`; keep generated results out of source changes unless explicitly requested.
