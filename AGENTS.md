@@ -29,3 +29,44 @@
 - JaCoCo excludes generated OpenAPI `rest/api` and `rest/dto` packages and enforces `0.85` line and `0.66` branch coverage on `verify`.
 - Postman regression tests live in `src/test/postman` and require the app running locally plus Node.js and `jq`; run with `zsh src/test/postman/postman-tests.sh` from the repo root if the script is not executable.
 - JMeter performance tests live in `src/test/jmeter` and require the app running locally plus JMeter `5.6.3+`; keep generated results out of source changes unless explicitly requested.
+
+## SDD4J
+
+Spec source:
+- format: Markdown doc comments in `package-info.java`
+- source root: `src/main/java`
+- requirements style: EARS
+- trace ids: `R<n>.<m>`
+
+Spec language:
+- default: `en`
+- requirements: English EARS
+
+Architecture layout:
+- skill: `sdd4j-package-by-layer`
+- scope: primary project architecture; no exceptions
+- base package: `org.springframework.samples.petclinic`
+- spec package pattern: `org.springframework.samples.petclinic.capabilities.<capability>`
+
+Layer packages:
+- entrypoints: `org.springframework.samples.petclinic.rest.controller.v1`, `org.springframework.samples.petclinic.rest.controller.v2`
+- application: `org.springframework.samples.petclinic.service`
+- entities: `org.springframework.samples.petclinic.model`
+- infrastructure: `org.springframework.samples.petclinic.repository`, its subpackages, `org.springframework.samples.petclinic.mapper`, `org.springframework.samples.petclinic.config`, `org.springframework.samples.petclinic.security`, and `org.springframework.samples.petclinic.util`
+
+Capability mapping:
+- strategy: singular resource name; `<resource>` maps to controller classes whose resource stem matches, service methods whose domain noun matches, and the exact model class when declared
+- all public generated-API override methods in a mapped controller belong to that controller's capability, including operations on child resources
+- `ClinicService` is shared; its methods map by domain noun and do not make the whole service belong to one capability
+- `BaseEntity`, `NamedEntity`, `Person`, and `Role` are shared models excluded from entity drift unless explicitly declared
+- generated OpenAPI interfaces and DTOs, mappers, repositories, persistence implementations, configuration, validation plumbing, and transport error handling are implementation details unless explicitly declared
+- structural drift is checked both ways between boundary operations and mapped controller/service methods, entities and mapped models, and requirement ids and tests
+
+Stack:
+- skill: `spring-boot-server`
+- build tool: Maven wrapper
+- verification command: `./mvnw verify`
+
+Traceability:
+- tests may remain in existing layer-based test packages
+- each requirement id must appear in a test method name, display name, JavaDoc, or annotation
