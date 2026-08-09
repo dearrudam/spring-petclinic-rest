@@ -42,7 +42,10 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -161,7 +164,7 @@ class VisitRestControllerV1Tests {
 
     @Test
     @WithMockUser(roles="OWNER_ADMIN")
-    void testCreateVisitSuccess() throws Exception {
+    void testCreateVisitForTodaySuccess() throws Exception {
     	Visit newVisit = visits.get(0);
     	newVisit.setId(999);
     	ObjectMapper mapper = new ObjectMapper();
@@ -170,6 +173,37 @@ class VisitRestControllerV1Tests {
     	this.mockMvc.perform(post("/api/visits")
     		.content(newVisitAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
     		.andExpect(status().isCreated());
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCreateVisitForFutureDateSuccess() throws Exception {
+        Visit newVisit = visits.get(0);
+        newVisit.setId(999);
+        newVisit.setDate(LocalDate.now().plusDays(1));
+        ObjectMapper mapper = new ObjectMapper();
+        String newVisitAsJSON = mapper.writeValueAsString(visitMapper.toVisitDto(newVisit));
+        this.mockMvc.perform(post("/api/visits")
+                .content(newVisitAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isCreated());
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCreateVisitForPastDateError() throws Exception {
+        Visit newVisit = visits.get(0);
+        newVisit.setId(999);
+        newVisit.setDate(LocalDate.now().minusDays(1));
+        ObjectMapper mapper = new ObjectMapper();
+        String newVisitAsJSON = mapper.writeValueAsString(visitMapper.toVisitDto(newVisit));
+        this.mockMvc.perform(post("/api/visits")
+                .content(newVisitAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.schemaValidationErrors[0].field").value("date"))
+            .andExpect(jsonPath("$.schemaValidationErrors[0].defaultMessage")
+                .value("Visit date must be today or in the future."));
+
+        verify(this.clinicService, never()).saveVisit(any());
     }
 
     @Test
