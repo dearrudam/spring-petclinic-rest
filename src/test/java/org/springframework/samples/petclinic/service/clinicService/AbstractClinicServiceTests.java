@@ -270,11 +270,17 @@ abstract class AbstractClinicServiceTests {
     @Transactional
     void shouldUpdateVisit(){
     	Visit visit = this.clinicService.findVisitById(1);
-    	String oldDesc = visit.getDescription();
-        String newDesc = oldDesc + "X";
+        Integer visitId = visit.getId();
+        Pet pet = visit.getPet();
+        String newDesc = visit.getDescription() + "X";
+        LocalDate newDate = visit.getDate().plusDays(1);
         visit.setDescription(newDesc);
+        visit.setDate(newDate);
         this.clinicService.saveVisit(visit);
         visit = this.clinicService.findVisitById(1);
+        assertThat(visit.getId()).isEqualTo(visitId);
+        assertThat(visit.getPet().getId()).isEqualTo(pet.getId());
+        assertThat(visit.getDate()).isEqualTo(newDate);
         assertThat(visit.getDescription()).isEqualTo(newDesc);
     }
 

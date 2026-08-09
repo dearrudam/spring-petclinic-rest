@@ -15,7 +15,7 @@ import jakarta.validation.Payload;
 @Documented
 public @interface VisitDateValidation {
 
-    String message() default "Visit date must be today or in the future.";
+    String message() default "Visit date invalid! Visit date must be today or in the future.";
 
     Class<?>[] groups() default {};
 

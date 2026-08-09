@@ -31,7 +31,7 @@
 ///
 /// - R2.2 - If a visit creation request has no non-empty description, then the capability shall reject the request.
 ///
-/// - R2.3 - If a visit creation request has a date before the current date, then the capability shall reject the request as a bad request with the message `Visit date must be today or in the future.`
+/// - R2.3 - If a visit creation request has a date before the current date, then the capability shall reject the request as a bad request with the message `Visit date invalid! Visit date must be today or in the future.`
 ///
 /// - R2.4 - When a visit creation request has the current date or a future date, the capability shall accept the visit date.
 ///
