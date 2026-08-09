@@ -2283,6 +2283,7 @@ components:
     Visit:
       title: Visit
       description: A booking for a vet visit.
+      x-class-extra-annotation: "@org.springframework.samples.petclinic.rest.validation.VisitDateValidation"
       allOf:
         - $ref: '#/components/schemas/VisitFields'
         - type: object

@@ -21,6 +21,8 @@ import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -45,6 +47,7 @@ import java.util.List;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -196,8 +199,44 @@ class VisitRestControllerV1Tests {
         String newVisitAsJSON = mapper.writeValueAsString(visitMapper.toVisitDto(newVisit));
     	this.mockMvc.perform(post("/api/visits")
         		.content(newVisitAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
-        		.andExpect(status().isBadRequest());
-     }
+         		.andExpect(status().isBadRequest());
+      }
+
+    @Test
+    @DisplayName("R2.3 rejects creation with a past visit date")
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCreateVisitWithPastDate() throws Exception {
+        Visit newVisit = visits.get(0);
+        newVisit.setId(null);
+        newVisit.setDate(LocalDate.now().minusDays(1));
+        ObjectMapper mapper = new ObjectMapper();
+        String newVisitAsJSON = mapper.writeValueAsString(visitMapper.toVisitDto(newVisit));
+
+        this.mockMvc.perform(post("/api/visits")
+                .content(newVisitAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.schemaValidationErrors[0].defaultMessage")
+                .value("Visit date must be today or in the future."));
+
+        verify(this.clinicService, never()).saveVisit(any(Visit.class));
+    }
+
+    @ParameterizedTest(name = "R2.4 accepts a visit date {0} day(s) from today")
+    @ValueSource(ints = { 0, 1 })
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCreateVisitWithCurrentOrFutureDate(int daysFromToday) throws Exception {
+        Visit newVisit = visits.get(0);
+        newVisit.setId(999);
+        newVisit.setDate(LocalDate.now().plusDays(daysFromToday));
+        ObjectMapper mapper = new ObjectMapper();
+        String newVisitAsJSON = mapper.writeValueAsString(visitMapper.toVisitDto(newVisit));
+
+        this.mockMvc.perform(post("/api/visits")
+                .content(newVisitAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isCreated());
+
+        verify(this.clinicService).saveVisit(any(Visit.class));
+    }
 
     @Test
     @DisplayName("R3.1 persists editable details while retaining identity and pet")
