@@ -19,6 +19,7 @@ package org.springframework.samples.petclinic.rest.controller;
 import org.springframework.samples.petclinic.rest.controller.v1.VisitRestControllerV1;
 import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -43,6 +44,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.BDDMockito.given;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -115,6 +118,7 @@ class VisitRestControllerV1Tests {
     }
 
     @Test
+    @DisplayName("R1.3 provides an existing visit and its pet association")
     @WithMockUser(roles="OWNER_ADMIN")
     void testGetVisitSuccess() throws Exception {
     	given(this.clinicService.findVisitById(2)).willReturn(visits.get(0));
@@ -123,10 +127,12 @@ class VisitRestControllerV1Tests {
             .andExpect(status().isOk())
             .andExpect(content().contentType("application/json"))
             .andExpect(jsonPath("$.id").value(2))
-            .andExpect(jsonPath("$.description").value("rabies shot"));
+            .andExpect(jsonPath("$.description").value("rabies shot"))
+            .andExpect(jsonPath("$.petId").value(8));
     }
 
     @Test
+    @DisplayName("R1.4 reports a missing visit")
     @WithMockUser(roles="OWNER_ADMIN")
     void testGetVisitNotFound() throws Exception {
         given(this.clinicService.findVisitById(999)).willReturn(null);
@@ -136,6 +142,7 @@ class VisitRestControllerV1Tests {
     }
 
     @Test
+    @DisplayName("R1.1 provides all recorded visits")
     @WithMockUser(roles="OWNER_ADMIN")
     void testGetAllVisitsSuccess() throws Exception {
     	given(this.clinicService.findAllVisits()).willReturn(visits);
@@ -150,6 +157,7 @@ class VisitRestControllerV1Tests {
     }
 
     @Test
+    @DisplayName("R1.2 reports an empty visit collection as not found")
     @WithMockUser(roles="OWNER_ADMIN")
     void testGetAllVisitsNotFound() throws Exception {
     	visits.clear();
@@ -160,6 +168,7 @@ class VisitRestControllerV1Tests {
     }
 
     @Test
+    @DisplayName("R2.1 persists and provides a valid new visit")
     @WithMockUser(roles="OWNER_ADMIN")
     void testCreateVisitSuccess() throws Exception {
     	Visit newVisit = visits.get(0);
@@ -167,12 +176,17 @@ class VisitRestControllerV1Tests {
     	ObjectMapper mapper = new ObjectMapper();
         String newVisitAsJSON = mapper.writeValueAsString(visitMapper.toVisitDto(newVisit));
     	System.out.println("newVisitAsJSON " + newVisitAsJSON);
-    	this.mockMvc.perform(post("/api/visits")
-    		.content(newVisitAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
-    		.andExpect(status().isCreated());
+		this.mockMvc.perform(post("/api/visits")
+			.content(newVisitAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
+			.andExpect(status().isCreated())
+            .andExpect(header().string("Location", "/api/visits/999"))
+            .andExpect(jsonPath("$.id").value(999))
+            .andExpect(jsonPath("$.petId").value(8));
+        verify(this.clinicService).saveVisit(any(Visit.class));
     }
 
     @Test
+    @DisplayName("R2.2 rejects a creation request without a description")
     @WithMockUser(roles="OWNER_ADMIN")
     void testCreateVisitError() throws Exception {
     	Visit newVisit = visits.get(0);
@@ -186,6 +200,7 @@ class VisitRestControllerV1Tests {
      }
 
     @Test
+    @DisplayName("R3.1 persists editable details while retaining identity and pet")
     @WithMockUser(roles="OWNER_ADMIN")
     void testUpdateVisitSuccess() throws Exception {
     	given(this.clinicService.findVisitById(2)).willReturn(visits.get(0));
@@ -207,6 +222,7 @@ class VisitRestControllerV1Tests {
     }
 
     @Test
+    @DisplayName("R3.2 rejects an update without a description")
     @WithMockUser(roles="OWNER_ADMIN")
     void testUpdateVisitError() throws Exception {
     	Visit newVisit = visits.get(0);
@@ -216,21 +232,38 @@ class VisitRestControllerV1Tests {
     	this.mockMvc.perform(put("/api/visits/2")
     		.content(newVisitAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
         	.andExpect(status().isBadRequest());
-     }
+      }
 
     @Test
+    @DisplayName("R3.3 reports a missing visit targeted for update")
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testUpdateVisitNotFound() throws Exception {
+        Visit visit = visits.get(0);
+        ObjectMapper mapper = new ObjectMapper();
+        String visitAsJson = mapper.writeValueAsString(visitMapper.toVisitDto(visit));
+        given(this.clinicService.findVisitById(999)).willReturn(null);
+
+        this.mockMvc.perform(put("/api/visits/999")
+                .content(visitAsJson).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("R4.1 removes an existing visit")
     @WithMockUser(roles="OWNER_ADMIN")
     void testDeleteVisitSuccess() throws Exception {
     	Visit newVisit = visits.get(0);
     	ObjectMapper mapper = new ObjectMapper();
         String newVisitAsJSON = mapper.writeValueAsString(visitMapper.toVisitDto(newVisit));
     	given(this.clinicService.findVisitById(2)).willReturn(visits.get(0));
-    	this.mockMvc.perform(delete("/api/visits/2")
-    		.content(newVisitAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
-        	.andExpect(status().isNoContent());
+		this.mockMvc.perform(delete("/api/visits/2")
+			.content(newVisitAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
+			.andExpect(status().isNoContent());
+        verify(this.clinicService).deleteVisit(newVisit);
     }
 
     @Test
+    @DisplayName("R4.2 reports a missing visit targeted for deletion")
     @WithMockUser(roles="OWNER_ADMIN")
     void testDeleteVisitError() throws Exception {
     	Visit newVisit = visits.get(0);

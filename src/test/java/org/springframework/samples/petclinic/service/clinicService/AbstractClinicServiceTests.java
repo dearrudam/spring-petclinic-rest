@@ -15,6 +15,7 @@
  */
 package org.springframework.samples.petclinic.service.clinicService;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -194,6 +195,7 @@ abstract class AbstractClinicServiceTests {
     }
 
     @Test
+    @DisplayName("R1.5 provides visits associated with a pet")
        void shouldFindVisitsByPetId() throws Exception {
         Collection<Visit> visits = this.clinicService.findVisitsByPetId(7);
         assertThat(visits.size()).isEqualTo(2);
@@ -242,6 +244,7 @@ abstract class AbstractClinicServiceTests {
     }
 
     @Test
+    @DisplayName("R2.1 persists a new visit and assigns its identity")
     @Transactional
     void shouldInsertVisit() {
         Collection<Visit> visits = this.clinicService.findAllVisits();
@@ -263,6 +266,7 @@ abstract class AbstractClinicServiceTests {
     }
 
     @Test
+    @DisplayName("R3.1 persists changes to an existing visit")
     @Transactional
     void shouldUpdateVisit(){
     	Visit visit = this.clinicService.findVisitById(1);
@@ -275,6 +279,7 @@ abstract class AbstractClinicServiceTests {
     }
 
     @Test
+    @DisplayName("R4.1 removes an existing visit from persistence")
     @Transactional
     void shouldDeleteVisit(){
     	Visit visit = this.clinicService.findVisitById(1);
