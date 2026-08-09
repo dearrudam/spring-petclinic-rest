@@ -2271,7 +2271,7 @@ components:
           type: string
           format: date
           example: '2013-01-01'
-          x-field-extra-annotation: '@jakarta.validation.constraints.FutureOrPresent(message = "Visit date must be today or in the future.")'
+          x-field-extra-annotation: '@jakarta.validation.constraints.FutureOrPresent(message = "Visit date invalid! Visit date must be today or in the future.")'
         description:
           title: Description
           description: The description for the visit.

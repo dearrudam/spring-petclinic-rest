@@ -201,7 +201,7 @@ class VisitRestControllerV1Tests {
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.schemaValidationErrors[0].field").value("date"))
             .andExpect(jsonPath("$.schemaValidationErrors[0].defaultMessage")
-                .value("Visit date must be today or in the future."));
+                .value("Visit date invalid! Visit date must be today or in the future."));
 
         verify(this.clinicService, never()).saveVisit(any());
     }
