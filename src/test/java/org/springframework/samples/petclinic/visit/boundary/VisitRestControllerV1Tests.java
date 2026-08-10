@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package org.springframework.samples.petclinic.rest.controller;
+package org.springframework.samples.petclinic.visit.boundary;
 
-import org.springframework.samples.petclinic.rest.controller.v1.VisitRestControllerV1;
 import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,16 +27,15 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.samples.petclinic.mapper.VisitMapper;
 import org.springframework.samples.petclinic.model.Owner;
 import org.springframework.samples.petclinic.model.Pet;
 import org.springframework.samples.petclinic.model.PetType;
-import org.springframework.samples.petclinic.model.Visit;
+import org.springframework.samples.petclinic.visit.entity.Visit;
 import org.springframework.samples.petclinic.rest.advice.ExceptionControllerAdvice;
 import org.springframework.samples.petclinic.rest.dto.VisitFieldsDto;
-import org.springframework.samples.petclinic.service.ClinicService;
 import org.springframework.samples.petclinic.service.clinicService.ApplicationTestConfig;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -49,6 +47,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doAnswer;
@@ -71,7 +70,7 @@ class VisitRestControllerV1Tests {
     private VisitRestControllerV1 visitRestControllerV1;
 
     @MockitoBean
-    private ClinicService clinicService;
+    private VisitFacade visitFacade;
 
     @Autowired
     private VisitMapper visitMapper;
@@ -129,7 +128,7 @@ class VisitRestControllerV1Tests {
     @DisplayName("R1.3 provides an existing visit and its pet association")
     @WithMockUser(roles="OWNER_ADMIN")
     void testGetVisitSuccess() throws Exception {
-    	given(this.clinicService.findVisitById(2)).willReturn(visits.get(0));
+    	given(this.visitFacade.getVisit(2)).willReturn(visits.get(0));
         this.mockMvc.perform(get("/api/visits/2")
         	.accept(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(status().isOk())
@@ -143,7 +142,7 @@ class VisitRestControllerV1Tests {
     @DisplayName("R1.4 reports a missing visit")
     @WithMockUser(roles="OWNER_ADMIN")
     void testGetVisitNotFound() throws Exception {
-        given(this.clinicService.findVisitById(999)).willReturn(null);
+        given(this.visitFacade.getVisit(999)).willReturn(null);
         this.mockMvc.perform(get("/api/visits/999")
         	.accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isNotFound());
@@ -153,7 +152,7 @@ class VisitRestControllerV1Tests {
     @DisplayName("R1.1 provides all recorded visits")
     @WithMockUser(roles="OWNER_ADMIN")
     void testGetAllVisitsSuccess() throws Exception {
-    	given(this.clinicService.findAllVisits()).willReturn(visits);
+    	given(this.visitFacade.listVisits()).willReturn(visits);
         this.mockMvc.perform(get("/api/visits")
         	.accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
@@ -169,7 +168,7 @@ class VisitRestControllerV1Tests {
     @WithMockUser(roles="OWNER_ADMIN")
     void testGetAllVisitsNotFound() throws Exception {
     	visits.clear();
-    	given(this.clinicService.findAllVisits()).willReturn(visits);
+    	given(this.visitFacade.listVisits()).willReturn(visits);
         this.mockMvc.perform(get("/api/visits")
         	.accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isNotFound());
@@ -184,7 +183,7 @@ class VisitRestControllerV1Tests {
         doAnswer(invocation -> {
             invocation.getArgument(0, Visit.class).setId(999);
             return null;
-        }).when(this.clinicService).saveVisit(any(Visit.class));
+        }).when(this.visitFacade).createVisit(any(Visit.class));
         ObjectMapper mapper = new ObjectMapper();
         String newVisitAsJSON = mapper.writeValueAsString(visitMapper.toVisitDto(newVisit));
         this.mockMvc.perform(post("/api/visits")
@@ -195,7 +194,7 @@ class VisitRestControllerV1Tests {
             .andExpect(jsonPath("$.date").value(LocalDate.now().toString()))
             .andExpect(jsonPath("$.description").value("rabies shot"))
             .andExpect(jsonPath("$.petId").value(8));
-        verify(this.clinicService).saveVisit(any(Visit.class));
+        verify(this.visitFacade).createVisit(any(Visit.class));
     }
 
     @ParameterizedTest(name = "R2.2 rejects a creation request with description [{0}]")
@@ -211,7 +210,7 @@ class VisitRestControllerV1Tests {
                 .content(newVisitAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(status().isBadRequest());
 
-        verify(this.clinicService, never()).saveVisit(any(Visit.class));
+        verify(this.visitFacade, never()).createVisit(any(Visit.class));
     }
 
     @Test
@@ -230,7 +229,7 @@ class VisitRestControllerV1Tests {
             .andExpect(jsonPath("$.schemaValidationErrors[0].defaultMessage")
                 .value("Visit date invalid! Visit date must be today or in the future."));
 
-        verify(this.clinicService, never()).saveVisit(any(Visit.class));
+        verify(this.visitFacade, never()).createVisit(any(Visit.class));
     }
 
     @ParameterizedTest(name = "R2.4 accepts a visit date {0} day(s) from today")
@@ -247,7 +246,15 @@ class VisitRestControllerV1Tests {
                 .content(newVisitAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(status().isCreated());
 
-        verify(this.clinicService).saveVisit(any(Visit.class));
+        ArgumentCaptor<Visit> createdVisit = ArgumentCaptor.forClass(Visit.class);
+        verify(this.visitFacade).createVisit(createdVisit.capture());
+        assertThat(createdVisit.getValue().getId()).isEqualTo(999);
+    }
+
+    @Test
+    @WithMockUser(roles = "VET_ADMIN")
+    void directVisitOperationsRequireOwnerAdminRole() {
+        assertThrows(AccessDeniedException.class, () -> visitRestControllerV1.listVisits());
     }
 
     @Test
@@ -255,7 +262,7 @@ class VisitRestControllerV1Tests {
     @WithMockUser(roles="OWNER_ADMIN")
     void testUpdateVisitSuccess() throws Exception {
         Visit currentVisit = visits.get(0);
-        given(this.clinicService.findVisitById(2)).willReturn(currentVisit);
+        given(this.visitFacade.getVisit(2)).willReturn(currentVisit);
         LocalDate newDate = LocalDate.now().plusDays(1);
         VisitFieldsDto update = new VisitFieldsDto("rabies shot test").date(newDate);
         ObjectMapper mapper = new ObjectMapper();
@@ -266,11 +273,30 @@ class VisitRestControllerV1Tests {
             .andExpect(status().isNoContent());
 
         ArgumentCaptor<Visit> savedVisit = ArgumentCaptor.forClass(Visit.class);
-        verify(this.clinicService).saveVisit(savedVisit.capture());
+        verify(this.visitFacade).updateVisit(savedVisit.capture());
         assertThat(savedVisit.getValue().getId()).isEqualTo(2);
         assertThat(savedVisit.getValue().getPet()).isSameAs(currentVisit.getPet());
         assertThat(savedVisit.getValue().getDate()).isEqualTo(newDate);
         assertThat(savedVisit.getValue().getDescription()).isEqualTo("rabies shot test");
+    }
+
+    @Test
+    @WithMockUser(roles = "OWNER_ADMIN")
+    void updatePreservesAcceptanceOfPastDates() throws Exception {
+        Visit currentVisit = visits.get(0);
+        given(this.visitFacade.getVisit(2)).willReturn(currentVisit);
+        LocalDate pastDate = LocalDate.now().minusDays(1);
+        VisitFieldsDto update = new VisitFieldsDto("past follow-up").date(pastDate);
+
+        this.mockMvc.perform(put("/api/visits/2")
+                .content(new ObjectMapper().writeValueAsString(update))
+                .accept(MediaType.APPLICATION_JSON_VALUE)
+                .contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isNoContent());
+
+        ArgumentCaptor<Visit> savedVisit = ArgumentCaptor.forClass(Visit.class);
+        verify(this.visitFacade).updateVisit(savedVisit.capture());
+        assertThat(savedVisit.getValue().getDate()).isEqualTo(pastDate);
     }
 
     @ParameterizedTest(name = "R3.2 rejects an update with description [{0}]")
@@ -285,7 +311,7 @@ class VisitRestControllerV1Tests {
                 .content(newVisitAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(status().isBadRequest());
 
-        verify(this.clinicService, never()).saveVisit(any(Visit.class));
+        verify(this.visitFacade, never()).updateVisit(any(Visit.class));
     }
 
     @Test
@@ -295,13 +321,13 @@ class VisitRestControllerV1Tests {
         Visit visit = visits.get(0);
         ObjectMapper mapper = new ObjectMapper();
         String visitAsJson = mapper.writeValueAsString(visitMapper.toVisitDto(visit));
-        given(this.clinicService.findVisitById(999)).willReturn(null);
+        given(this.visitFacade.getVisit(999)).willReturn(null);
 
         this.mockMvc.perform(put("/api/visits/999")
                 .content(visitAsJson).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(status().isNotFound());
 
-        verify(this.clinicService, never()).saveVisit(any(Visit.class));
+        verify(this.visitFacade, never()).updateVisit(any(Visit.class));
     }
 
     @Test
@@ -311,11 +337,11 @@ class VisitRestControllerV1Tests {
     	Visit newVisit = visits.get(0);
     	ObjectMapper mapper = new ObjectMapper();
         String newVisitAsJSON = mapper.writeValueAsString(visitMapper.toVisitDto(newVisit));
-    	given(this.clinicService.findVisitById(2)).willReturn(visits.get(0));
+    	given(this.visitFacade.getVisit(2)).willReturn(visits.get(0));
 		this.mockMvc.perform(delete("/api/visits/2")
 			.content(newVisitAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
 			.andExpect(status().isNoContent());
-        verify(this.clinicService).deleteVisit(newVisit);
+        verify(this.visitFacade).deleteVisit(newVisit);
     }
 
     @Test
@@ -325,12 +351,12 @@ class VisitRestControllerV1Tests {
     	Visit newVisit = visits.get(0);
     	ObjectMapper mapper = new ObjectMapper();
         String newVisitAsJSON = mapper.writeValueAsString(visitMapper.toVisitDto(newVisit));
-        given(this.clinicService.findVisitById(999)).willReturn(null);
+        given(this.visitFacade.getVisit(999)).willReturn(null);
         this.mockMvc.perform(delete("/api/visits/999")
                 .content(newVisitAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(status().isNotFound());
 
-        verify(this.clinicService, never()).deleteVisit(any(Visit.class));
+        verify(this.visitFacade, never()).deleteVisit(any(Visit.class));
     }
 
 }

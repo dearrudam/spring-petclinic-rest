@@ -16,6 +16,8 @@
 package org.springframework.samples.petclinic.model;
 
 import jakarta.persistence.*;
+import org.springframework.samples.petclinic.visit.entity.Visit;
+
 import java.time.LocalDate;
 import java.util.*;
 

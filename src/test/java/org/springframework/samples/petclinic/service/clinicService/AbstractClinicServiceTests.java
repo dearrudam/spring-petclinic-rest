@@ -24,6 +24,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.samples.petclinic.model.*;
 import org.springframework.samples.petclinic.service.ClinicService;
 import org.springframework.samples.petclinic.util.EntityUtils;
+import org.springframework.samples.petclinic.visit.entity.Visit;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 

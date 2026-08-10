@@ -57,4 +57,4 @@
 ///
 /// - Scheduling visits through owner operations and managing the pet lifecycle.
 /// - Transport formats, persistence technology, and DTO conversion mechanics.
-package org.springframework.samples.petclinic.capabilities.visit;
+package org.springframework.samples.petclinic.visit;

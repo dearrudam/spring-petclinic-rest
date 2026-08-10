@@ -24,6 +24,8 @@ import org.springframework.samples.petclinic.model.*;
 import org.springframework.samples.petclinic.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.samples.petclinic.visit.control.VisitControl;
+import org.springframework.samples.petclinic.visit.entity.Visit;
 
 import java.util.Collection;
 import java.util.List;
@@ -43,7 +45,7 @@ public class ClinicServiceImpl implements ClinicService {
     private final PetRepository petRepository;
     private final VetRepository vetRepository;
     private final OwnerRepository ownerRepository;
-    private final VisitRepository visitRepository;
+    private final VisitControl visitControl;
     private final SpecialtyRepository specialtyRepository;
     private final PetTypeRepository petTypeRepository;
 
@@ -51,13 +53,13 @@ public class ClinicServiceImpl implements ClinicService {
         PetRepository petRepository,
         VetRepository vetRepository,
         OwnerRepository ownerRepository,
-        VisitRepository visitRepository,
+        VisitControl visitControl,
         SpecialtyRepository specialtyRepository,
         PetTypeRepository petTypeRepository) {
         this.petRepository = petRepository;
         this.vetRepository = vetRepository;
         this.ownerRepository = ownerRepository;
-        this.visitRepository = visitRepository;
+        this.visitControl = visitControl;
         this.specialtyRepository = specialtyRepository;
         this.petTypeRepository = petTypeRepository;
     }
@@ -81,21 +83,18 @@ public class ClinicServiceImpl implements ClinicService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public Visit findVisitById(int visitId) throws DataAccessException {
-        return findEntityById(() -> visitRepository.findById(visitId));
+        return visitControl.findById(visitId);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public Collection<Visit> findAllVisits() throws DataAccessException {
-        return visitRepository.findAll();
+        return visitControl.findAll();
     }
 
     @Override
-    @Transactional
     public void deleteVisit(Visit visit) throws DataAccessException {
-        visitRepository.delete(visit);
+        visitControl.delete(visit);
     }
 
     @Override
@@ -217,10 +216,8 @@ public class ClinicServiceImpl implements ClinicService {
     }
 
     @Override
-    @Transactional
     public void saveVisit(Visit visit) throws DataAccessException {
-        visitRepository.save(visit);
-
+        visitControl.save(visit);
     }
 
     @Override
@@ -243,9 +240,8 @@ public class ClinicServiceImpl implements ClinicService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public Collection<Visit> findVisitsByPetId(int petId) {
-        return visitRepository.findByPetId(petId);
+        return visitControl.findByPetId(petId);
     }
 
     @Override

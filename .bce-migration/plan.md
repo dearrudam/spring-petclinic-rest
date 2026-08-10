@@ -19,7 +19,7 @@ The visit implementation depends on the legacy `Pet` model. Pet and owner API re
 
 | Component | Responsibility | Status | Boundary | Control | Entity | Source Evidence |
 | --- | --- | --- | --- | --- | --- | --- |
-| `visit` | Manage visits and their association with pets throughout the visit lifecycle | Not Started | REST controller, public facade, DTO mapper, date validator, persistence adapters | Transactional visit use cases and persistence port | `Visit` | Existing visit capability spec, controller, service methods, entity, repository adapters, and traced tests |
+| `visit` | Manage visits and their association with pets throughout the visit lifecycle | Completed | REST controller, public facade, DTO mapper, date validator, persistence adapters | Transactional visit use cases and persistence port | `Visit` | Existing visit capability spec, controller, service methods, entity, repository adapters, and traced tests |
 
 Only `visit` will migrate to BCE. Owner, pet, pet type, vet, specialty, and shared technical concerns remain in the current package-by-layer architecture.
 
@@ -191,4 +191,4 @@ The migration is complete when:
 
 ### Recommended First Step
 
-Run and record the baseline verification, then add only missing characterization coverage for the nested owner route and security. Do not move packages until that baseline is green and the observable behavior to preserve is explicit.
+Completed on 2026-08-09. The baseline and final verification were green, behavior characterization was extended, and the visit capability now owns its BCE boundary, control, entity, persistence adapters, specification, and directly associated tests.

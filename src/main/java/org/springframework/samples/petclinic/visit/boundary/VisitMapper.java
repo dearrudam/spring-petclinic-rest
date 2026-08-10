@@ -1,18 +1,17 @@
-package org.springframework.samples.petclinic.mapper;
+package org.springframework.samples.petclinic.visit.boundary;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.springframework.samples.petclinic.model.Visit;
+import org.springframework.samples.petclinic.mapper.PetMapper;
 import org.springframework.samples.petclinic.rest.dto.VisitDto;
 import org.springframework.samples.petclinic.rest.dto.VisitFieldsDto;
+import org.springframework.samples.petclinic.visit.entity.Visit;
 
 import java.util.Collection;
 
-/**
- * Map Visit & VisitDto using mapstruct
- */
 @Mapper(uses = PetMapper.class)
 public interface VisitMapper {
+
     @Mapping(source = "petId", target = "pet.id")
     Visit toVisit(VisitDto visitDto);
 
@@ -24,5 +23,4 @@ public interface VisitMapper {
     VisitDto toVisitDto(Visit visit);
 
     Collection<VisitDto> toVisitsDto(Collection<Visit> visits);
-
 }

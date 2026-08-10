@@ -1,10 +1,10 @@
-package org.springframework.samples.petclinic.rest.validation;
-
-import java.time.LocalDate;
+package org.springframework.samples.petclinic.visit.boundary.validation;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import org.springframework.samples.petclinic.rest.dto.VisitDto;
+
+import java.time.LocalDate;
 
 public class VisitDateValidator implements ConstraintValidator<VisitDateValidation, VisitDto> {
 

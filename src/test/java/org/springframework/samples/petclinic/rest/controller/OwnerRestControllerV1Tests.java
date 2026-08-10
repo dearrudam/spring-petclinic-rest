@@ -26,7 +26,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.samples.petclinic.mapper.OwnerMapper;
 import org.springframework.samples.petclinic.mapper.PetMapper;
-import org.springframework.samples.petclinic.mapper.VisitMapper;
 import org.springframework.samples.petclinic.model.Owner;
 import org.springframework.samples.petclinic.rest.advice.ExceptionControllerAdvice;
 import org.springframework.samples.petclinic.rest.dto.OwnerDto;
@@ -35,6 +34,9 @@ import org.springframework.samples.petclinic.rest.dto.PetTypeDto;
 import org.springframework.samples.petclinic.rest.dto.VisitDto;
 import org.springframework.samples.petclinic.service.ClinicService;
 import org.springframework.samples.petclinic.service.clinicService.ApplicationTestConfig;
+import org.springframework.samples.petclinic.visit.boundary.VisitFacade;
+import org.springframework.samples.petclinic.visit.boundary.VisitMapper;
+import org.springframework.samples.petclinic.visit.entity.Visit;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -51,7 +53,9 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -80,6 +84,9 @@ class OwnerRestControllerV1Tests {
 
     @MockitoBean
     private ClinicService clinicService;
+
+    @MockitoBean
+    private VisitFacade visitFacade;
 
     private MockMvc mockMvc;
 
@@ -521,12 +528,22 @@ class OwnerRestControllerV1Tests {
     void testCreateVisitSuccess() throws Exception {
         VisitDto newVisit = visits.get(0);
         newVisit.setId(999);
+        doAnswer(invocation -> {
+            invocation.getArgument(0, Visit.class).setId(999);
+            return null;
+        }).when(this.visitFacade).createVisit(any(Visit.class));
         ObjectMapper mapper = new ObjectMapper();
         String newVisitAsJSON = mapper.writeValueAsString(visitMapper.toVisit(newVisit));
-        System.out.println("newVisitAsJSON " + newVisitAsJSON);
-        this.mockMvc.perform(post("/api/owners/1/pets/1/visits")
+        this.mockMvc.perform(post("/api/owners/999/pets/1/visits")
                 .content(newVisitAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
-            .andExpect(status().isCreated());
+            .andExpect(status().isCreated())
+            .andExpect(header().string("Location", "/api/visits/999"))
+            .andExpect(jsonPath("$.id").value(999))
+            .andExpect(jsonPath("$.petId").value(1));
+
+        var savedVisit = org.mockito.ArgumentCaptor.forClass(Visit.class);
+        verify(this.visitFacade).createVisit(savedVisit.capture());
+        org.assertj.core.api.Assertions.assertThat(savedVisit.getValue().getPet().getId()).isEqualTo(1);
     }
 
     @Test

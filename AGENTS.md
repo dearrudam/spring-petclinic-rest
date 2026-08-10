@@ -12,8 +12,8 @@
 
 - `src/main/resources/openapi.yml` is the source for generated REST API interfaces and DTOs.
 - Generated code lives under `target/generated-sources/openapi/src/main/java` and is added during `generate-sources`; do not edit generated `rest/api` or `rest/dto` classes directly.
-- Controllers in `src/main/java/.../rest/controller/v1` and `v2` implement generated interfaces from `org.springframework.samples.petclinic.rest.api`.
-- MapStruct mappers in `src/main/java/.../mapper` convert between domain models and generated DTOs; annotation processing uses Spring components by default.
+- Controllers implement generated interfaces from `org.springframework.samples.petclinic.rest.api`; the visit controller is owned by its BCE boundary.
+- MapStruct mappers convert between domain models and generated DTOs; visit mapping is owned by its BCE boundary and annotation processing uses Spring components by default.
 
 ## Runtime Profiles
 
@@ -44,9 +44,17 @@ Spec language:
 
 Architecture layout:
 - skill: `sdd4j-package-by-layer`
-- scope: primary project architecture; no exceptions
+- scope: primary project architecture
+- exception: `org.springframework.samples.petclinic.visit` uses `sdd4j-bce`
 - base package: `org.springframework.samples.petclinic`
 - spec package pattern: `org.springframework.samples.petclinic.capabilities.<capability>`
+- exception spec: `org.springframework.samples.petclinic.visit.package-info.java`
+
+Visit BCE layout:
+- component package: `org.springframework.samples.petclinic.visit`
+- boundary package: `org.springframework.samples.petclinic.visit.boundary`
+- control package: `org.springframework.samples.petclinic.visit.control`
+- entity package: `org.springframework.samples.petclinic.visit.entity`
 
 Layer packages:
 - entrypoints: `org.springframework.samples.petclinic.rest.controller.v1`, `org.springframework.samples.petclinic.rest.controller.v2`
