@@ -25,6 +25,8 @@ tags:
     description: Endpoints related to vets.
   - name: visits
     description: Endpoints related to vet visits.
+  - name: visit-confirmations
+    description: Endpoints related to visit confirmations.
   - name: pettypes
     description: Endpoints related to pet types.
   - name: specialties
@@ -1341,6 +1343,44 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
+  /visits/{visitId}/confirmation:
+    put:
+      tags:
+        - visit-confirmations
+      operationId: confirmVisit
+      summary: Confirm a visit
+      description: Records or returns the first confirmation of an eligible visit.
+      parameters:
+        - name: visitId
+          in: path
+          description: The ID of the visit.
+          required: true
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            example: 1
+      responses:
+        200:
+          description: The visit confirmation was recorded or already existed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisitConfirmation'
+        401:
+          description: Authentication is required.
+        403:
+          description: The caller is not an owner administrator.
+        404:
+          description: Visit not found.
+        409:
+          description: The visit is no longer eligible for confirmation.
+        500:
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
   /specialties:
     get:
       tags:
@@ -2306,6 +2346,28 @@ components:
           required:
             - id
             - petId
+    VisitConfirmation:
+      title: Visit confirmation
+      description: The immutable first confirmation of a visit.
+      type: object
+      properties:
+        visitId:
+          title: Visit ID
+          description: The ID of the confirmed visit.
+          type: integer
+          format: int32
+          minimum: 0
+          example: 1
+          readOnly: true
+        confirmedAt:
+          title: Confirmed at
+          description: The time at which the visit was first confirmed.
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - visitId
+        - confirmedAt
     PetTypeFields:
       title: PetType fields
       description: Editable fields of a pet type.

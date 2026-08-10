@@ -51,6 +51,11 @@ CREATE TABLE IF NOT EXISTS visits (
 );
 CREATE INDEX ON visits (pet_id);
 
+CREATE TABLE IF NOT EXISTS visit_confirmations (
+  visit_id     INT PRIMARY KEY REFERENCES visits (id) ON DELETE CASCADE,
+  confirmed_at TIMESTAMP(6) WITH TIME ZONE NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS users (
   username VARCHAR(20) NOT NULL ,
   password VARCHAR(60) NOT NULL ,

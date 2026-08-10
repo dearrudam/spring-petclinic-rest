@@ -1,6 +1,7 @@
 DROP TABLE vet_specialties IF EXISTS;
 DROP TABLE vets IF EXISTS;
 DROP TABLE specialties IF EXISTS;
+DROP TABLE visit_confirmations IF EXISTS;
 DROP TABLE visits IF EXISTS;
 DROP TABLE pets IF EXISTS;
 DROP TABLE types IF EXISTS;
@@ -65,6 +66,12 @@ CREATE TABLE visits (
 ALTER TABLE visits ADD CONSTRAINT fk_visits_pets FOREIGN KEY (pet_id) REFERENCES pets (id);
 CREATE INDEX visits_pet_id ON visits (pet_id);
 
+CREATE TABLE visit_confirmations (
+  visit_id     INTEGER PRIMARY KEY,
+  confirmed_at TIMESTAMP(6) NOT NULL
+);
+ALTER TABLE visit_confirmations ADD CONSTRAINT fk_visit_confirmations_visits FOREIGN KEY (visit_id) REFERENCES visits (id) ON DELETE CASCADE;
+
 CREATE  TABLE users (
   username    VARCHAR(20) NOT NULL ,
   password    VARCHAR(60) NOT NULL ,
@@ -79,4 +86,3 @@ CREATE TABLE roles (
 );
 ALTER TABLE roles ADD CONSTRAINT fk_username FOREIGN KEY (username) REFERENCES users (username);
 CREATE INDEX fk_username_idx ON roles (username);
-

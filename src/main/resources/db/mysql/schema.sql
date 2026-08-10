@@ -54,6 +54,12 @@ CREATE TABLE IF NOT EXISTS visits (
   FOREIGN KEY (pet_id) REFERENCES pets(id)
 ) engine=InnoDB;
 
+CREATE TABLE IF NOT EXISTS visit_confirmations (
+  visit_id INT(4) UNSIGNED NOT NULL PRIMARY KEY,
+  confirmed_at TIMESTAMP(6) NOT NULL,
+  FOREIGN KEY (visit_id) REFERENCES visits(id) ON DELETE CASCADE
+) engine=InnoDB;
+
 CREATE TABLE IF NOT EXISTS users (
   username VARCHAR(20) NOT NULL ,
   password VARCHAR(60) NOT NULL ,
