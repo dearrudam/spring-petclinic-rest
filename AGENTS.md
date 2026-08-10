@@ -45,16 +45,16 @@ Spec language:
 Architecture layout:
 - skill: `sdd4j-package-by-layer`
 - scope: primary project architecture
-- exception: `org.springframework.samples.petclinic.visit` uses `sdd4j-bce`
+- exceptions: `org.springframework.samples.petclinic.visit` and `org.springframework.samples.petclinic.visitconfirmation` use `sdd4j-bce`
 - base package: `org.springframework.samples.petclinic`
 - spec package pattern: `org.springframework.samples.petclinic.capabilities.<capability>`
-- exception spec: `org.springframework.samples.petclinic.visit.package-info.java`
+- exception specs: `org.springframework.samples.petclinic.visit.package-info.java` and `org.springframework.samples.petclinic.visitconfirmation.package-info.java`
 
-Visit BCE layout:
-- component package: `org.springframework.samples.petclinic.visit`
-- boundary package: `org.springframework.samples.petclinic.visit.boundary`
-- control package: `org.springframework.samples.petclinic.visit.control`
-- entity package: `org.springframework.samples.petclinic.visit.entity`
+BCE layouts:
+- component packages: `org.springframework.samples.petclinic.visit`, `org.springframework.samples.petclinic.visitconfirmation`
+- boundary package: `<component>.boundary`
+- control package: `<component>.control`
+- entity package: `<component>.entity`
 
 Layer packages:
 - entrypoints: `org.springframework.samples.petclinic.rest.controller.v1`, `org.springframework.samples.petclinic.rest.controller.v2`
