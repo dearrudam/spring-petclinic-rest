@@ -15,7 +15,6 @@
  */
 package org.springframework.samples.petclinic.service.clinicService;
 
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -24,7 +23,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.samples.petclinic.model.*;
 import org.springframework.samples.petclinic.service.ClinicService;
 import org.springframework.samples.petclinic.util.EntityUtils;
-import org.springframework.samples.petclinic.visit.entity.Visit;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -180,33 +178,6 @@ abstract class AbstractClinicServiceTests {
     }
 
     @Test
-    @Transactional
-    void shouldAddNewVisitForPet() {
-        Pet pet7 = this.clinicService.findPetById(7);
-        int found = pet7.getVisits().size();
-        Visit visit = new Visit();
-        pet7.addVisit(visit);
-        visit.setDescription("test");
-        this.clinicService.saveVisit(visit);
-        this.clinicService.savePet(pet7);
-
-        pet7 = this.clinicService.findPetById(7);
-        assertThat(pet7.getVisits().size()).isEqualTo(found + 1);
-        assertThat(visit.getId()).isNotNull();
-    }
-
-    @Test
-    @DisplayName("R1.5 provides visits associated with a pet")
-       void shouldFindVisitsByPetId() throws Exception {
-        Collection<Visit> visits = this.clinicService.findVisitsByPetId(7);
-        assertThat(visits.size()).isEqualTo(2);
-        Visit[] visitArr = visits.toArray(new Visit[visits.size()]);
-        assertThat(visitArr[0].getPet()).isNotNull();
-        assertThat(visitArr[0].getDate()).isNotNull();
-        assertThat(visitArr[0].getPet().getId()).isEqualTo(7);
-    }
-
-    @Test
     void shouldFindAllPets(){
         Collection<Pet> pets = this.clinicService.findAllPets();
         Pet pet1 = EntityUtils.getById(pets, Pet.class, 1);
@@ -226,77 +197,6 @@ abstract class AbstractClinicServiceTests {
 			pet = null;
 		}
         assertThat(pet).isNull();
-    }
-
-    @Test
-    void shouldFindVisitDyId(){
-    	Visit visit = this.clinicService.findVisitById(1);
-    	assertThat(visit.getId()).isEqualTo(1);
-    	assertThat(visit.getPet().getName()).isEqualTo("Samantha");
-    }
-
-    @Test
-    void shouldFindAllVisits(){
-        Collection<Visit> visits = this.clinicService.findAllVisits();
-        Visit visit1 = EntityUtils.getById(visits, Visit.class, 1);
-        assertThat(visit1.getPet().getName()).isEqualTo("Samantha");
-        Visit visit3 = EntityUtils.getById(visits, Visit.class, 3);
-        assertThat(visit3.getPet().getName()).isEqualTo("Max");
-    }
-
-    @Test
-    @DisplayName("R2.1 persists a new visit and assigns its identity")
-    @Transactional
-    void shouldInsertVisit() {
-        Collection<Visit> visits = this.clinicService.findAllVisits();
-        int found = visits.size();
-
-        Pet pet = this.clinicService.findPetById(1);
-
-        Visit visit = new Visit();
-        visit.setPet(pet);
-        visit.setDate(LocalDate.now());
-        visit.setDescription("new visit");
-
-
-        this.clinicService.saveVisit(visit);
-        assertThat(visit.getId().longValue()).isNotEqualTo(0);
-
-        visits = this.clinicService.findAllVisits();
-        assertThat(visits.size()).isEqualTo(found + 1);
-    }
-
-    @Test
-    @DisplayName("R3.1 persists changes to an existing visit")
-    @Transactional
-    void shouldUpdateVisit(){
-    	Visit visit = this.clinicService.findVisitById(1);
-        Integer visitId = visit.getId();
-        Pet pet = visit.getPet();
-        String newDesc = visit.getDescription() + "X";
-        LocalDate newDate = visit.getDate().plusDays(1);
-        visit.setDescription(newDesc);
-        visit.setDate(newDate);
-        this.clinicService.saveVisit(visit);
-        visit = this.clinicService.findVisitById(1);
-        assertThat(visit.getId()).isEqualTo(visitId);
-        assertThat(visit.getPet().getId()).isEqualTo(pet.getId());
-        assertThat(visit.getDate()).isEqualTo(newDate);
-        assertThat(visit.getDescription()).isEqualTo(newDesc);
-    }
-
-    @Test
-    @DisplayName("R4.1 removes an existing visit from persistence")
-    @Transactional
-    void shouldDeleteVisit(){
-    	Visit visit = this.clinicService.findVisitById(1);
-        this.clinicService.deleteVisit(visit);
-        try {
-        	visit = this.clinicService.findVisitById(1);
-		} catch (Exception e) {
-			visit = null;
-		}
-        assertThat(visit).isNull();
     }
 
     @Test
