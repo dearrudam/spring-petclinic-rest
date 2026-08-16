@@ -3,6 +3,8 @@ package org.springframework.samples.petclinic.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.springframework.samples.petclinic.model.Visit;
+import org.springframework.samples.petclinic.rest.dto.VisitCreateDto;
+import org.springframework.samples.petclinic.rest.dto.VisitCreateFieldsDto;
 import org.springframework.samples.petclinic.rest.dto.VisitDto;
 import org.springframework.samples.petclinic.rest.dto.VisitFieldsDto;
 
@@ -16,9 +18,19 @@ public interface VisitMapper {
     @Mapping(source = "petId", target = "pet.id")
     Visit toVisit(VisitDto visitDto);
 
+    @Mapping(source = "petId", target = "pet.id")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "date", defaultExpression = "java(java.time.LocalDate.now())")
+    Visit toVisit(VisitCreateDto visitCreateDto);
+
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "pet", ignore = true)
     Visit toVisit(VisitFieldsDto visitFieldsDto);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "pet", ignore = true)
+    @Mapping(target = "date", defaultExpression = "java(java.time.LocalDate.now())")
+    Visit toVisit(VisitCreateFieldsDto visitCreateFieldsDto);
 
     @Mapping(source = "pet.id", target = "petId")
     VisitDto toVisitDto(Visit visit);

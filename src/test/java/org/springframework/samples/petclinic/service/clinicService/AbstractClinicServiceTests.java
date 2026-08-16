@@ -15,11 +15,13 @@
  */
 package org.springframework.samples.petclinic.service.clinicService;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.samples.petclinic.capabilities.visit.Requirement;
 import org.springframework.samples.petclinic.model.*;
 import org.springframework.samples.petclinic.service.ClinicService;
 import org.springframework.samples.petclinic.util.EntityUtils;
@@ -194,13 +196,17 @@ abstract class AbstractClinicServiceTests {
     }
 
     @Test
-       void shouldFindVisitsByPetId() throws Exception {
+    @DisplayName("R6.1")
+    @Requirement(Requirement.Rn.R6_1)
+    void shouldFindVisitsByPetId() throws Exception {
         Collection<Visit> visits = this.clinicService.findVisitsByPetId(7);
         assertThat(visits.size()).isEqualTo(2);
         Visit[] visitArr = visits.toArray(new Visit[visits.size()]);
         assertThat(visitArr[0].getPet()).isNotNull();
         assertThat(visitArr[0].getDate()).isNotNull();
         assertThat(visitArr[0].getPet().getId()).isEqualTo(7);
+
+        assertThat(this.clinicService.findVisitsByPetId(1)).isEmpty();
     }
 
     @Test

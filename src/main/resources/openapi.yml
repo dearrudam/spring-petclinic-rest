@@ -556,7 +556,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VisitFields'
+              $ref: '#/components/schemas/VisitCreateFields'
         required: true
       responses:
         201:
@@ -1135,7 +1135,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Visit'
+              $ref: '#/components/schemas/VisitCreate'
         required: true
       responses:
         200:
@@ -2280,6 +2280,43 @@ components:
           example: 'rabies shot'
       required:
         - description
+    VisitCreateFields:
+      title: Visit creation fields
+      description: Fields required to register a vet visit.
+      type: object
+      properties:
+        date:
+          title: Date
+          description: The current or future date of the visit.
+          type: string
+          format: date
+          x-field-extra-annotation: '@jakarta.validation.constraints.FutureOrPresent'
+          example: '2030-01-01'
+        description:
+          title: Description
+          description: The description for the visit.
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: 'rabies shot'
+      required:
+        - description
+    VisitCreate:
+      title: Visit creation
+      description: A vet visit to register for a pet.
+      allOf:
+        - $ref: '#/components/schemas/VisitCreateFields'
+        - type: object
+          properties:
+            petId:
+              title: Pet ID
+              description: The ID of the pet.
+              type: integer
+              format: int32
+              minimum: 0
+              example: 1
+          required:
+            - petId
     Visit:
       title: Visit
       description: A booking for a vet visit.
