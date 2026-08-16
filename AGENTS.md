@@ -15,6 +15,16 @@
 - Controllers in `src/main/java/.../rest/controller/v1` and `v2` implement generated interfaces from `org.springframework.samples.petclinic.rest.api`.
 - MapStruct mappers in `src/main/java/.../mapper` convert between domain models and generated DTOs; annotation processing uses Spring components by default.
 
+## API Validation
+
+- `src/main/resources/openapi.yml` is the source of truth for REST request schemas and transport-level validation.
+- When a requirement can be expressed through OpenAPI constraints or generated Jakarta Bean Validation annotations, update `openapi.yml` before adding manual validation to controllers or services.
+- When create and update operations have different validation rules, use operation-specific request schemas instead of branching on entity identity such as `isNew()`.
+- Use `x-field-extra-annotation` for Jakarta constraints not directly expressible by OpenAPI Schema, such as `@FutureOrPresent`.
+- Keep response schemas separate from constrained request schemas when responses may legitimately contain values rejected for new requests.
+- Defaults and state transitions that Bean Validation cannot perform remain application behavior.
+- Do not duplicate generated DTO validation in the service unless the same invariant must also protect non-HTTP callers; when uncertain, ask before duplicating it.
+
 ## Runtime Profiles
 
 - The app expects two active profiles: one database profile (`h2`, `hsqldb`, `mysql`, `postgres`) plus one repository profile (`jdbc`, `jpa`, `spring-data-jpa`).
@@ -60,6 +70,8 @@ Capability mapping:
 - classes whose resource stem matches the capability map to that capability
 - methods in shared classes map by the resource named in the method signature
 - controller operations involving multiple resources map to the capability owning the operation's primary resource
+- `src/main/resources/openapi.yml` is contract-relevant for REST boundary operations
+- generated API interfaces and DTOs are excluded from drift, but their OpenAPI source is not
 - shared base models and generic support classes are excluded from entity drift unless explicitly declared
 - tests may remain in existing layer-oriented test packages
 
