@@ -16,16 +16,24 @@
 
 package org.springframework.samples.petclinic.rest.controller;
 
-import org.springframework.samples.petclinic.rest.controller.v1.PetRestControllerV1;
-import tools.jackson.databind.ObjectMapper;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
+
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.samples.petclinic.capabilities.pets.Requirement.Rn;
 import org.springframework.samples.petclinic.mapper.PetMapper;
 import org.springframework.samples.petclinic.model.Pet;
 import org.springframework.samples.petclinic.rest.advice.ExceptionControllerAdvice;
+import org.springframework.samples.petclinic.rest.controller.v1.PetRestControllerV1;
 import org.springframework.samples.petclinic.rest.dto.OwnerDto;
 import org.springframework.samples.petclinic.rest.dto.PetDto;
 import org.springframework.samples.petclinic.rest.dto.PetTypeDto;
@@ -36,38 +44,39 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.ObjectMapper;
 
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.springframework.samples.petclinic.capabilities.pets.Requirement.Rn.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Test class for {@link PetRestControllerV1}
- *
- * @author Vitaliy Fedoriv
+ * Requirement tests for {@link PetRestControllerV1}.
  */
-
 @SpringBootTest
 @ContextConfiguration(classes = ApplicationTestConfig.class)
 @WebAppConfiguration
 class PetRestControllerV1Tests {
 
-    @MockitoBean
-    protected ClinicService clinicService;
     @Autowired
     private PetRestControllerV1 petRestControllerV1;
+
     @Autowired
     private PetMapper petMapper;
+
+    @MockitoBean
+    private ClinicService clinicService;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
     private MockMvc mockMvc;
 
     private List<PetDto> pets;
@@ -103,115 +112,99 @@ class PetRestControllerV1Tests {
             .type(petType));
     }
 
-    @Test
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("listPetCases")
     @WithMockUser(roles = "OWNER_ADMIN")
-    void testGetPetSuccess() throws Exception {
-        given(this.clinicService.findPetById(3)).willReturn(petMapper.toPet(pets.get(0)));
-        this.mockMvc.perform(get("/api/pets/3")
-                .accept(MediaType.APPLICATION_JSON_VALUE))
-            .andExpect(status().isOk())
-            .andExpect(content().contentType("application/json"))
-            .andExpect(jsonPath("$.id").value(3))
-            .andExpect(jsonPath("$.name").value("Rosy"));
+    void listPets(Rn requirement, boolean hasPets, int expectedStatus) throws Exception {
+        given(this.clinicService.findAllPets()).willReturn(hasPets ? petMapper.toPets(pets) : List.of());
+
+        ResultActions result = this.mockMvc.perform(get("/api/pets").accept(MediaType.APPLICATION_JSON));
+
+        result.andExpect(status().is(expectedStatus));
+        if (hasPets) {
+            result.andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].id").value(3))
+                .andExpect(jsonPath("$[0].name").value("Rosy"))
+                .andExpect(jsonPath("$[1].id").value(4))
+                .andExpect(jsonPath("$[1].name").value("Jewel"));
+        }
     }
 
-    @Test
-    @WithMockUser(roles = "OWNER_ADMIN")
-    void testGetPetNotFound() throws Exception {
-        given(petMapper.toPetDto(this.clinicService.findPetById(999))).willReturn(null);
-        this.mockMvc.perform(get("/api/pets/999")
-                .accept(MediaType.APPLICATION_JSON))
-            .andExpect(status().isNotFound());
+    static Stream<Arguments> listPetCases() {
+        return Stream.of(Arguments.of(R1_1, true, 200), Arguments.of(R1_2, false, 404));
     }
 
-    @Test
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("getPetCases")
     @WithMockUser(roles = "OWNER_ADMIN")
-    void testGetAllPetsSuccess() throws Exception {
-        final Collection<Pet> mockPets = petMapper.toPets(this.pets);
-        when(this.clinicService.findAllPets()).thenReturn(mockPets);
+    void getPet(Rn requirement, int petId, boolean found, int expectedStatus) throws Exception {
+        given(this.clinicService.findPetById(petId)).willReturn(found ? petMapper.toPet(pets.get(0)) : null);
 
-        this.mockMvc.perform(get("/api/pets")
-                .accept(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk())
-            .andExpect(content().contentType("application/json"))
-            .andExpect(jsonPath("$.[0].id").value(3))
-            .andExpect(jsonPath("$.[0].name").value("Rosy"))
-            .andExpect(jsonPath("$.[1].id").value(4))
-            .andExpect(jsonPath("$.[1].name").value("Jewel"));
+        ResultActions result = this.mockMvc.perform(get("/api/pets/{petId}", petId)
+            .accept(MediaType.APPLICATION_JSON));
+
+        result.andExpect(status().is(expectedStatus));
+        if (found) {
+            result.andExpect(jsonPath("$.id").value(3))
+                .andExpect(jsonPath("$.name").value("Rosy"));
+        }
     }
 
-    @Test
-    @WithMockUser(roles = "OWNER_ADMIN")
-    void testGetAllPetsNotFound() throws Exception {
-        pets.clear();
-        given(this.clinicService.findAllPets()).willReturn(petMapper.toPets(pets));
-        this.mockMvc.perform(get("/api/pets")
-                .accept(MediaType.APPLICATION_JSON))
-            .andExpect(status().isNotFound());
+    static Stream<Arguments> getPetCases() {
+        return Stream.of(Arguments.of(R2_1, 3, true, 200), Arguments.of(R2_2, 999, false, 404));
     }
 
-    @Test
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("updatePetCases")
     @WithMockUser(roles = "OWNER_ADMIN")
-    void testUpdatePetSuccess() throws Exception {
-        given(this.clinicService.findPetById(3)).willReturn(petMapper.toPet(pets.get(0)));
+    void updatePet(Rn requirement, int petId, boolean found, String name, int expectedStatus,
+                   boolean expectSave) throws Exception {
+        given(this.clinicService.findPetById(petId)).willReturn(found ? petMapper.toPet(pets.get(0)) : null);
+
         PetDto newPet = pets.get(0);
-        newPet.setName("Rosy I");
-        ObjectMapper mapper =  JsonMapper.builder()
-            .defaultDateFormat(new SimpleDateFormat("dd/MM/yyyy"))
-            .build();
+        newPet.id(petId).name(name);
+        String body = objectMapper.writeValueAsString(newPet);
 
-        String newPetAsJSON = mapper.writeValueAsString(newPet);
-        this.mockMvc.perform(put("/api/pets/3")
-                .content(newPetAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
-            .andExpect(content().contentType("application/json"))
-            .andExpect(status().isNoContent());
+        ResultActions result = this.mockMvc.perform(put("/api/pets/{petId}", petId)
+            .content(body).accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON));
 
-        this.mockMvc.perform(get("/api/pets/3")
-                .accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON_VALUE))
-            .andExpect(status().isOk())
-            .andExpect(content().contentType("application/json"))
-            .andExpect(jsonPath("$.id").value(3))
-            .andExpect(jsonPath("$.name").value("Rosy I"));
-
+        result.andExpect(status().is(expectedStatus));
+        if (expectSave) {
+            ArgumentCaptor<Pet> petCaptor = ArgumentCaptor.forClass(Pet.class);
+            verify(this.clinicService).savePet(petCaptor.capture());
+            assertThat(petCaptor.getValue().getId()).isEqualTo(petId);
+            assertThat(petCaptor.getValue().getName()).isEqualTo(name);
+        } else {
+            verify(this.clinicService, never()).savePet(any(Pet.class));
+        }
     }
 
-    @Test
-    @WithMockUser(roles = "OWNER_ADMIN")
-    void testUpdatePetError() throws Exception {
-        PetDto newPet = pets.get(0);
-        newPet.setName(null);
-        ObjectMapper mapper =  JsonMapper.builder()
-            .defaultDateFormat(new SimpleDateFormat("dd/MM/yyyy"))
-            .build();
-        String newPetAsJSON = mapper.writeValueAsString(newPet);
-
-        this.mockMvc.perform(put("/api/pets/3")
-                .content(newPetAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
-            .andExpect(status().isBadRequest());
+    static Stream<Arguments> updatePetCases() {
+        return Stream.of(
+            Arguments.of(R3_1, 3, true, "Rosy I", 204, true),
+            Arguments.of(R3_2, 999, false, "Rosy", 404, false),
+            Arguments.of(R3_3, 3, true, null, 400, false));
     }
 
-    @Test
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("deletePetCases")
     @WithMockUser(roles = "OWNER_ADMIN")
-    void testDeletePetSuccess() throws Exception {
-        PetDto newPet = pets.get(0);
-        ObjectMapper mapper = new ObjectMapper();
-        String newPetAsJSON = mapper.writeValueAsString(newPet);
-        given(this.clinicService.findPetById(3)).willReturn(petMapper.toPet(pets.get(0)));
-        this.mockMvc.perform(delete("/api/pets/3")
-                .content(newPetAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
-            .andExpect(status().isNoContent());
+    void deletePet(Rn requirement, int petId, boolean found, int expectedStatus) throws Exception {
+        given(this.clinicService.findPetById(petId)).willReturn(found ? petMapper.toPet(pets.get(0)) : null);
+
+        ResultActions result = this.mockMvc.perform(delete("/api/pets/{petId}", petId)
+            .accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON));
+
+        result.andExpect(status().is(expectedStatus));
+        if (found) {
+            verify(this.clinicService).deletePet(any(Pet.class));
+        } else {
+            verify(this.clinicService, never()).deletePet(any(Pet.class));
+        }
     }
 
-    @Test
-    @WithMockUser(roles = "OWNER_ADMIN")
-    void testDeletePetError() throws Exception {
-        PetDto newPet = pets.get(0);
-        ObjectMapper mapper = new ObjectMapper();
-        String newPetAsJSON = mapper.writeValueAsString(newPet);
-        given(this.clinicService.findPetById(999)).willReturn(null);
-        this.mockMvc.perform(delete("/api/pets/999")
-                .content(newPetAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
-            .andExpect(status().isNotFound());
+    static Stream<Arguments> deletePetCases() {
+        return Stream.of(Arguments.of(R4_1, 3, true, 204), Arguments.of(R4_2, 999, false, 404));
     }
 
 }

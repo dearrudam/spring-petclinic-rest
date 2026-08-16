@@ -8,6 +8,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
+import org.springframework.samples.petclinic.capabilities.pets.Requirement;
 import org.springframework.samples.petclinic.mapper.OwnerMapper;
 import org.springframework.samples.petclinic.mapper.PetMapper;
 import org.springframework.samples.petclinic.rest.advice.ExceptionControllerAdvice;
@@ -115,6 +116,7 @@ public class V2RestControllersTests {
     }
 
     @Test
+    @Requirement(Requirement.Rn.R1_3)
     @WithMockUser(roles = "OWNER_ADMIN")
     void testGetPetsPageSuccess() throws Exception {
         var pageRequest = PageRequest.of(0, 5, Sort.by("id"));
