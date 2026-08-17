@@ -242,7 +242,8 @@ class OwnerRestControllerRequirementTests {
 
         result.andExpect(status().is(expectedStatus));
         if (!empty) {
-            result.andExpect(jsonPath("$.[0].id").value(lastName == null ? 1 : 2))
+            result.andExpect(jsonPath("$.length()").value(lastName == null ? 4 : 2))
+                .andExpect(jsonPath("$.[0].id").value(lastName == null ? 1 : 2))
                 .andExpect(jsonPath("$.[0].firstName").value(lastName == null ? "George" : "Betty"));
             if (lastName != null) {
                 result.andExpect(jsonPath("$.[0].lastName").value("Davis"))
@@ -378,9 +379,19 @@ class OwnerRestControllerRequirementTests {
             Arguments.of(R5_1, 1, true, validOwnerFields().firstName("GeorgeI"), 204),
             Arguments.of(R5_2, 999, false, validOwnerFields(), 404),
             Arguments.of(R5_3, 1, true, validOwnerFields().firstName(null), 400),
+            Arguments.of(R5_3, 1, true, validOwnerFields().firstName(""), 400),
+            Arguments.of(R5_3, 1, true, validOwnerFields().firstName("A".repeat(31)), 400),
+            Arguments.of(R5_3, 1, true, validOwnerFields().lastName(null), 400),
             Arguments.of(R5_3, 1, true, validOwnerFields().lastName(""), 400),
+            Arguments.of(R5_3, 1, true, validOwnerFields().lastName("A".repeat(31)), 400),
+            Arguments.of(R5_3, 1, true, validOwnerFields().address(null), 400),
+            Arguments.of(R5_3, 1, true, validOwnerFields().address(""), 400),
             Arguments.of(R5_3, 1, true, validOwnerFields().address("A".repeat(256)), 400),
+            Arguments.of(R5_3, 1, true, validOwnerFields().city(null), 400),
+            Arguments.of(R5_3, 1, true, validOwnerFields().city(""), 400),
             Arguments.of(R5_3, 1, true, validOwnerFields().city("A".repeat(81)), 400),
+            Arguments.of(R5_3, 1, true, validOwnerFields().telephone(null), 400),
+            Arguments.of(R5_3, 1, true, validOwnerFields().telephone(""), 400),
             Arguments.of(R5_3, 1, true, validOwnerFields().telephone("1".repeat(21)), 400),
             Arguments.of(R5_3, 1, true, validOwnerFields().firstName("George1"), 400),
             Arguments.of(R5_3, 1, true, validOwnerFields().lastName("Franklin1"), 400),
@@ -464,7 +475,11 @@ class OwnerRestControllerRequirementTests {
             Arguments.of(R7_3, 1, true, validPetFields().birthDate(LocalDate.now().minusYears(50).minusDays(1)), 400),
             Arguments.of(R7_3, 1, true, validPetFields().type(null), 400),
             Arguments.of(R7_3, 1, true, validPetFields().type(new PetTypeDto().name("dog")), 400),
+            Arguments.of(R7_3, 1, true, validPetFields().type(new PetTypeDto().id(-1).name("dog")), 400),
+            Arguments.of(R7_3, 1, true, validPetFields().type(new PetTypeDto().id(2)), 400),
             Arguments.of(R7_3, 1, true, validPetFields().type(new PetTypeDto().id(2).name("")), 400),
+            Arguments.of(R7_3, 1, true,
+                validPetFields().type(new PetTypeDto().id(2).name("A".repeat(81))), 400),
             Arguments.of(R7_4, -1, false, validPetFields(), 400)
         );
     }
@@ -533,8 +548,22 @@ class OwnerRestControllerRequirementTests {
             Arguments.of(R9_2, 999, 1, false, true, validPetFields(), 404),
             Arguments.of(R9_2, 1, 999, true, false, validPetFields(), 404),
             Arguments.of(R9_3, 1, 1, true, true, validPetFields().name(null), 400),
+            Arguments.of(R9_3, 1, 1, true, true, validPetFields().name("A".repeat(31)), 400),
+            Arguments.of(R9_3, 1, 1, true, true, validPetFields().birthDate(null), 400),
             Arguments.of(R9_3, 1, 1, true, true, validPetFields().birthDate(LocalDate.now().plusDays(1)), 400),
+            Arguments.of(R9_3, 1, 1, true, true,
+                validPetFields().birthDate(LocalDate.now().minusYears(50).minusDays(1)), 400),
             Arguments.of(R9_3, 1, 1, true, true, validPetFields().type(null), 400),
+            Arguments.of(R9_3, 1, 1, true, true,
+                validPetFields().type(new PetTypeDto().name("dog")), 400),
+            Arguments.of(R9_3, 1, 1, true, true,
+                validPetFields().type(new PetTypeDto().id(-1).name("dog")), 400),
+            Arguments.of(R9_3, 1, 1, true, true,
+                validPetFields().type(new PetTypeDto().id(2)), 400),
+            Arguments.of(R9_3, 1, 1, true, true,
+                validPetFields().type(new PetTypeDto().id(2).name("")), 400),
+            Arguments.of(R9_3, 1, 1, true, true,
+                validPetFields().type(new PetTypeDto().id(2).name("A".repeat(81))), 400),
             Arguments.of(R9_4, -1, 1, false, false, validPetFields(), 400),
             Arguments.of(R9_4, 1, -1, false, false, validPetFields(), 400)
         );
