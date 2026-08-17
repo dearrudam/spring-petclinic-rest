@@ -29,6 +29,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.samples.petclinic.PetClinicApplication;
 import org.springframework.samples.petclinic.capabilities.vets.VetsRequirement.Rn;
 import org.springframework.samples.petclinic.model.Specialty;
 import org.springframework.samples.petclinic.model.Vet;
@@ -37,7 +38,6 @@ import org.springframework.samples.petclinic.rest.controller.v1.VetRestControlle
 import org.springframework.samples.petclinic.service.ClinicService;
 import org.springframework.samples.petclinic.service.clinicService.ApplicationTestConfig;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -60,8 +60,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Requirement tests for {@link VetRestControllerV1}.
  */
-@SpringBootTest
-@ContextConfiguration(classes = ApplicationTestConfig.class)
+@SpringBootTest(classes = { PetClinicApplication.class, ApplicationTestConfig.class })
 @WebAppConfiguration
 class VetRestControllerV1Tests {
 
@@ -130,7 +129,11 @@ class VetRestControllerV1Tests {
     }
 
     static Stream<Arguments> getVetCases() {
-        return Stream.of(Arguments.of(R2_1, 1, true, 200), Arguments.of(R2_2, 999, false, 404));
+        return Stream.of(
+            Arguments.of(R2_1, 1, true, 200),
+            Arguments.of(R2_2, 999, false, 404),
+            Arguments.of(R2_3, -1, false, 400)
+        );
     }
 
     @ParameterizedTest(name = "{0}")
@@ -189,7 +192,10 @@ class VetRestControllerV1Tests {
     @WithMockUser(roles = "VET_ADMIN")
     void updateVet(Rn requirement, int vetId, Map<String, Object> body, boolean found, int expectedStatus) throws Exception {
         Vet existingVet = vets.getFirst();
+        Specialty existingSpecialty = specialty("dentistry");
         given(this.clinicService.findVetById(vetId)).willReturn(found ? existingVet : null);
+        given(this.clinicService.findSpecialtiesByNameIn(java.util.Set.of("dentistry")))
+            .willReturn(List.of(existingSpecialty));
 
         ResultActions result = this.mockMvc.perform(put("/api/vets/{vetId}", vetId)
             .content(objectMapper.writeValueAsString(body))
@@ -202,6 +208,7 @@ class VetRestControllerV1Tests {
             assertThat(existingVet.getId()).isEqualTo(1);
             assertThat(existingVet.getFirstName()).isEqualTo("Jane");
             assertThat(existingVet.getLastName()).isEqualTo("Doe");
+            assertThat(existingVet.getSpecialties()).containsExactly(existingSpecialty);
         }
         else {
             verify(this.clinicService, never()).saveVet(any(Vet.class));
@@ -210,7 +217,7 @@ class VetRestControllerV1Tests {
 
     static Stream<Arguments> updateVetCases() {
         return Stream.of(
-            Arguments.of(R4_1, 1, vetBody("Jane", "Doe", List.of()), true, 204),
+            Arguments.of(R4_1, 1, vetBody("Jane", "Doe", List.of(specialtyBody("dentistry"))), true, 204),
             Arguments.of(R4_2, 999, vetBody("Jane", "Doe", List.of()), false, 404),
             Arguments.of(R4_3, 1, vetBody(null, "Doe", List.of()), true, 400),
             Arguments.of(R4_3, 1, vetBody("", "Doe", List.of()), true, 400),
@@ -220,7 +227,8 @@ class VetRestControllerV1Tests {
             Arguments.of(R4_3, 1, vetBody("Jane", "", List.of()), true, 400),
             Arguments.of(R4_3, 1, vetBody("Jane", "Doe1", List.of()), true, 400),
             Arguments.of(R4_3, 1, vetBody("Jane", "D".repeat(31), List.of()), true, 400),
-            Arguments.of(R4_3, 1, vetBody("Jane", "Doe", null), true, 400)
+            Arguments.of(R4_3, 1, vetBody("Jane", "Doe", null), true, 400),
+            Arguments.of(R4_4, -1, vetBody("Jane", "Doe", List.of()), false, 400)
         );
     }
 
@@ -243,7 +251,11 @@ class VetRestControllerV1Tests {
     }
 
     static Stream<Arguments> deleteVetCases() {
-        return Stream.of(Arguments.of(R5_1, 1, true, 204), Arguments.of(R5_2, 999, false, 404));
+        return Stream.of(
+            Arguments.of(R5_1, 1, true, 204),
+            Arguments.of(R5_2, 999, false, 404),
+            Arguments.of(R5_3, -1, false, 400)
+        );
     }
 
     private static Vet vet(int id, String firstName, String lastName) {

@@ -1602,24 +1602,14 @@ paths:
       responses:
         200:
           description: Vets found and returned.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Vet'
-        304:
-          description: Not modified.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
+        404:
+          description: No vets found.
         500:
           description: Server error.
           content:
@@ -1641,32 +1631,20 @@ paths:
               $ref: '#/components/schemas/Vet'
         required: true
       responses:
-        200:
+        201:
           description: Vet created successfully.
           headers:
-            ETag:
-              description: An ID for this version of the response.
+            Location:
+              description: Location of the created vet.
               schema:
                 type: string
+                format: uri
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Vet'
-        304:
-          description: Not modified.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
         400:
           description: Bad request.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-        404:
-          description: Vet not found.
           content:
             application/json:
               schema:
@@ -1697,22 +1675,10 @@ paths:
       responses:
         200:
           description: Vet details found and returned.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Vet'
-        304:
-          description: Not modified.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
         400:
           description: Bad request.
           content:
@@ -1735,8 +1701,8 @@ paths:
       tags:
         - vets
       operationId: updateVet
-      summary: Update a vet  by ID
-      description: Returns the vet or a 404 error.
+      summary: Update a vet by ID
+      description: Updates the vet or returns a 404 error.
       parameters:
         - name: vetId
           in: path
@@ -1755,24 +1721,8 @@ paths:
               $ref: '#/components/schemas/Vet'
         required: true
       responses:
-        200:
-          description: Pet type details found and returned.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Vet'
-        304:
-          description: Not modified.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
+        204:
+          description: Vet updated successfully.
         400:
           description: Bad request.
           content:
@@ -1796,7 +1746,7 @@ paths:
         - vets
       operationId: deleteVet
       summary: Delete a vet by ID
-      description: Returns the vet or a 404 error.
+      description: Deletes the vet or returns a 404 error.
       parameters:
         - name: vetId
           in: path
@@ -1808,24 +1758,8 @@ paths:
             minimum: 0
             example: 1
       responses:
-        200:
-          description: Vet details found and returned.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Vet'
-        304:
-          description: Not modified.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
+        204:
+          description: Vet deleted successfully.
         400:
           description: Bad request.
           content:
