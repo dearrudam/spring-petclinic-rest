@@ -1,7 +1,11 @@
 package org.springframework.samples.petclinic.rest.controller;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageImpl;
@@ -29,6 +33,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -115,23 +120,57 @@ public class V2RestControllersTests {
             .andExpect(jsonPath("$.totalPages").value(2));
     }
 
-    @Test
-    @PetsRequirement(PetsRequirement.Rn.R1_3)
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("petsPageCases")
     @WithMockUser(roles = "OWNER_ADMIN")
-    void testGetPetsPageSuccess() throws Exception {
-        var pageRequest = PageRequest.of(0, 5, Sort.by("id"));
+    void testGetPetsPageSuccess(PetsRequirement.Rn requirement, String query, int expectedSize) throws Exception {
+        var pageRequest = PageRequest.of(0, expectedSize, Sort.by("id"));
         var pagePets = petMapper.toPets(pets).stream().toList();
         given(this.clinicService.findPets(pageRequest))
             .willReturn(new PageImpl<>(pagePets, pageRequest, pets.size()));
-        this.mockMvc.perform(get("/api/v2/pets?page=0&size=5")
+        this.mockMvc.perform(get("/api/v2/pets" + query)
                 .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(content().contentType("application/json"))
             .andExpect(jsonPath("$.content[0].id").value(3))
             .andExpect(jsonPath("$.content[0].name").value("Rosy"))
             .andExpect(jsonPath("$.page").value(0))
-            .andExpect(jsonPath("$.size").value(5))
+            .andExpect(jsonPath("$.size").value(expectedSize))
             .andExpect(jsonPath("$.totalElements").value(2))
             .andExpect(jsonPath("$.totalPages").value(1));
+    }
+
+    static Stream<Arguments> petsPageCases() {
+        return Stream.of(
+            Arguments.of(PetsRequirement.Rn.R1_3, "?page=0&size=5", 5),
+            Arguments.of(PetsRequirement.Rn.R1_3, "", 20));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("invalidPetsPageCases")
+    @WithMockUser(roles = "OWNER_ADMIN")
+    void rejectsInvalidPetsPageParameters(PetsRequirement.Rn requirement, String query) throws Exception {
+        this.mockMvc.perform(get("/api/v2/pets" + query).accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isBadRequest());
+    }
+
+    static Stream<Arguments> invalidPetsPageCases() {
+        return Stream.of(
+            Arguments.of(PetsRequirement.Rn.R1_4, "?page=-1&size=20"),
+            Arguments.of(PetsRequirement.Rn.R1_4, "?page=0&size=0"),
+            Arguments.of(PetsRequirement.Rn.R1_4, "?page=0&size=101"));
+    }
+
+    @Test
+    @DisplayName("R1.5")
+    @WithMockUser(roles = "OWNER_ADMIN")
+    void returnsAnEmptyPetsPage() throws Exception {
+        var pageRequest = PageRequest.of(2, 20, Sort.by("id"));
+        given(this.clinicService.findPets(pageRequest)).willReturn(new PageImpl<>(List.of(), pageRequest, 2));
+
+        this.mockMvc.perform(get("/api/v2/pets?page=2&size=20").accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content").isEmpty())
+            .andExpect(jsonPath("$.totalElements").value(2));
     }
 }

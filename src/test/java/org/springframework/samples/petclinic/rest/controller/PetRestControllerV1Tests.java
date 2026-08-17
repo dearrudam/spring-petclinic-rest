@@ -32,6 +32,7 @@ import org.springframework.http.MediaType;
 import org.springframework.samples.petclinic.capabilities.pets.PetsRequirement.Rn;
 import org.springframework.samples.petclinic.mapper.PetMapper;
 import org.springframework.samples.petclinic.model.Pet;
+import org.springframework.samples.petclinic.model.Visit;
 import org.springframework.samples.petclinic.rest.advice.ExceptionControllerAdvice;
 import org.springframework.samples.petclinic.rest.controller.v1.PetRestControllerV1;
 import org.springframework.samples.petclinic.rest.dto.OwnerDto;
@@ -138,7 +139,15 @@ class PetRestControllerV1Tests {
     @MethodSource("getPetCases")
     @WithMockUser(roles = "OWNER_ADMIN")
     void getPet(Rn requirement, int petId, boolean found, int expectedStatus) throws Exception {
-        given(this.clinicService.findPetById(petId)).willReturn(found ? petMapper.toPet(pets.get(0)) : null);
+        Pet existingPet = petMapper.toPet(pets.get(0));
+        if (requirement == R2_1) {
+            Visit visit = new Visit();
+            visit.setId(8);
+            visit.setDescription("Annual checkup");
+            visit.setDate(LocalDate.now().minusDays(1));
+            existingPet.addVisit(visit);
+        }
+        given(this.clinicService.findPetById(petId)).willReturn(found ? existingPet : null);
 
         ResultActions result = this.mockMvc.perform(get("/api/pets/{petId}", petId)
             .accept(MediaType.APPLICATION_JSON));
@@ -147,22 +156,33 @@ class PetRestControllerV1Tests {
         if (found) {
             result.andExpect(jsonPath("$.id").value(3))
                 .andExpect(jsonPath("$.name").value("Rosy"));
+            if (requirement == R2_1) {
+                result.andExpect(jsonPath("$.visits[0].id").value(8))
+                    .andExpect(jsonPath("$.visits[0].description").value("Annual checkup"))
+                    .andExpect(jsonPath("$.visits[0].petId").value(3));
+            }
         }
     }
 
     static Stream<Arguments> getPetCases() {
-        return Stream.of(Arguments.of(R2_1, 3, true, 200), Arguments.of(R2_2, 999, false, 404));
+        return Stream.of(
+            Arguments.of(R2_1, 3, true, 200),
+            Arguments.of(R2_2, 999, false, 404),
+            Arguments.of(R2_3, -1, false, 400));
     }
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("updatePetCases")
     @WithMockUser(roles = "OWNER_ADMIN")
-    void updatePet(Rn requirement, int petId, boolean found, String name, int expectedStatus,
-                   boolean expectSave) throws Exception {
+    void updatePet(Rn requirement, int petId, boolean found, String name, LocalDate birthDate,
+                   boolean includeType, int expectedStatus, boolean expectSave) throws Exception {
         given(this.clinicService.findPetById(petId)).willReturn(found ? petMapper.toPet(pets.get(0)) : null);
 
         PetDto newPet = pets.get(0);
-        newPet.id(petId).name(name);
+        newPet.id(petId).name(name).birthDate(birthDate);
+        if (!includeType) {
+            newPet.type(null);
+        }
         String body = objectMapper.writeValueAsString(newPet);
 
         ResultActions result = this.mockMvc.perform(put("/api/pets/{petId}", petId)
@@ -174,16 +194,25 @@ class PetRestControllerV1Tests {
             verify(this.clinicService).savePet(petCaptor.capture());
             assertThat(petCaptor.getValue().getId()).isEqualTo(petId);
             assertThat(petCaptor.getValue().getName()).isEqualTo(name);
+            assertThat(petCaptor.getValue().getBirthDate()).isEqualTo(birthDate);
+            assertThat(petCaptor.getValue().getType().getId()).isEqualTo(2);
         } else {
             verify(this.clinicService, never()).savePet(any(Pet.class));
         }
     }
 
     static Stream<Arguments> updatePetCases() {
+        LocalDate validBirthDate = LocalDate.now().minusYears(2);
         return Stream.of(
-            Arguments.of(R3_1, 3, true, "Rosy I", 204, true),
-            Arguments.of(R3_2, 999, false, "Rosy", 404, false),
-            Arguments.of(R3_3, 3, true, null, 400, false));
+            Arguments.of(R3_1, 3, true, "Rosy I", validBirthDate, true, 204, true),
+            Arguments.of(R3_2, 999, false, "Rosy", validBirthDate, true, 404, false),
+            Arguments.of(R3_3, 3, true, null, validBirthDate, true, 400, false),
+            Arguments.of(R3_3, 3, true, "R".repeat(31), validBirthDate, true, 400, false),
+            Arguments.of(R3_3, 3, true, "Rosy", null, true, 400, false),
+            Arguments.of(R3_3, 3, true, "Rosy", LocalDate.now().plusDays(1), true, 400, false),
+            Arguments.of(R3_3, 3, true, "Rosy", LocalDate.now().minusYears(50).minusDays(1), true, 400, false),
+            Arguments.of(R3_3, 3, true, "Rosy", validBirthDate, false, 400, false),
+            Arguments.of(R3_4, -1, false, "Rosy", validBirthDate, true, 400, false));
     }
 
     @ParameterizedTest(name = "{0}")
@@ -204,7 +233,10 @@ class PetRestControllerV1Tests {
     }
 
     static Stream<Arguments> deletePetCases() {
-        return Stream.of(Arguments.of(R4_1, 3, true, 204), Arguments.of(R4_2, 999, false, 404));
+        return Stream.of(
+            Arguments.of(R4_1, 3, true, 204),
+            Arguments.of(R4_2, 999, false, 404),
+            Arguments.of(R4_3, -1, false, 400));
     }
 
 }

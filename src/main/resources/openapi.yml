@@ -2207,8 +2207,6 @@ components:
               readOnly: true
           required:
             - id
-            - type
-            - visits
     VetFields:
       title: VetFields
       description: Editable fields of a veterinarian.
