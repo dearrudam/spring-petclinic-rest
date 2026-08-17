@@ -21,9 +21,12 @@ import java.io.IOException;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.samples.petclinic.capabilities.root.RootRequirement;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import static org.springframework.samples.petclinic.capabilities.root.RootRequirement.Rn.R1_1;
 
 /**
  * @author Vitaliy Fedoriv
@@ -39,9 +42,9 @@ public class RootRestControllerV1 {
     private String servletContextPath;
 
 	@RequestMapping(value = "/")
+	@RootRequirement(R1_1)
 	public void redirectToSwagger(HttpServletResponse response) throws IOException {
 		response.sendRedirect(this.servletContextPath + "/swagger-ui/index.html");
 	}
 
 }
-
