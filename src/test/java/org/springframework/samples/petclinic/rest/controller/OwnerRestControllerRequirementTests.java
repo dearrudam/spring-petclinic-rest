@@ -29,7 +29,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.samples.petclinic.mapper.OwnerMapper;
 import org.springframework.samples.petclinic.model.Owner;
-import org.springframework.samples.petclinic.capabilities.owners.Requirement;
+import org.springframework.samples.petclinic.capabilities.owners.OwnersRequirement;
 import org.springframework.samples.petclinic.rest.advice.ExceptionControllerAdvice;
 import org.springframework.samples.petclinic.rest.controller.v1.OwnerRestControllerV1;
 import org.springframework.samples.petclinic.rest.controller.v2.OwnerRestControllerV2;
@@ -57,7 +57,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.springframework.samples.petclinic.capabilities.owners.Requirement.Rn.*;
+import static org.springframework.samples.petclinic.capabilities.owners.OwnersRequirement.Rn.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -120,7 +120,7 @@ class OwnerRestControllerRequirementTests {
     @ParameterizedTest(name = "{0}")
     @MethodSource("createOwnerCases")
     @WithMockUser(roles = "OWNER_ADMIN")
-    void createOwner(Requirement.Rn requirement, OwnerFieldsDto body, boolean valid, int expectedStatus)
+    void createOwner(OwnersRequirement.Rn requirement, OwnerFieldsDto body, boolean valid, int expectedStatus)
         throws Exception {
         if (valid) {
             willAnswer(invocation -> {
@@ -161,7 +161,7 @@ class OwnerRestControllerRequirementTests {
     @ParameterizedTest(name = "{0}")
     @MethodSource("listOwnerCases")
     @WithMockUser(roles = "OWNER_ADMIN")
-    void listOwners(Requirement.Rn requirement, boolean filter, boolean empty, int expectedStatus) throws Exception {
+    void listOwners(OwnersRequirement.Rn requirement, boolean filter, boolean empty, int expectedStatus) throws Exception {
         List<OwnerDto> resultOwners = empty ? List.of() : owners.subList(1, 3);
         if (filter) {
             given(this.clinicService.findOwnerByLastName("Davis"))
@@ -196,7 +196,7 @@ class OwnerRestControllerRequirementTests {
     @ParameterizedTest(name = "{0}")
     @MethodSource("listOwnerPageCases")
     @WithMockUser(roles = "OWNER_ADMIN")
-    void listOwnersPage(Requirement.Rn requirement, int page, int size, int expectedStatus) throws Exception {
+    void listOwnersPage(OwnersRequirement.Rn requirement, int page, int size, int expectedStatus) throws Exception {
         if (expectedStatus == 200) {
             PageRequest pageRequest = PageRequest.of(page, size, Sort.by("id"));
             var pageOwners = ownerMapper.toOwners(owners.subList(0, 2)).stream().toList();
@@ -232,7 +232,7 @@ class OwnerRestControllerRequirementTests {
     @ParameterizedTest(name = "{0}")
     @MethodSource("getOwnerCases")
     @WithMockUser(roles = "OWNER_ADMIN")
-    void getOwner(Requirement.Rn requirement, int ownerId, boolean found, int expectedStatus) throws Exception {
+    void getOwner(OwnersRequirement.Rn requirement, int ownerId, boolean found, int expectedStatus) throws Exception {
         given(this.clinicService.findOwnerById(ownerId)).willReturn(found ? ownerMapper.toOwner(owners.get(0)) : null);
 
         ResultActions result = this.mockMvc.perform(get("/api/owners/{ownerId}", ownerId)
@@ -256,7 +256,7 @@ class OwnerRestControllerRequirementTests {
     @ParameterizedTest(name = "{0}")
     @MethodSource("updateOwnerCases")
     @WithMockUser(roles = "OWNER_ADMIN")
-    void updateOwner(Requirement.Rn requirement, int ownerId, boolean found, OwnerFieldsDto body,
+    void updateOwner(OwnersRequirement.Rn requirement, int ownerId, boolean found, OwnerFieldsDto body,
                      int expectedStatus) throws Exception {
         given(this.clinicService.findOwnerById(ownerId)).willReturn(found ? ownerMapper.toOwner(owners.get(0)) : null);
 
@@ -286,7 +286,7 @@ class OwnerRestControllerRequirementTests {
     @ParameterizedTest(name = "{0}")
     @MethodSource("deleteOwnerCases")
     @WithMockUser(roles = "OWNER_ADMIN")
-    void deleteOwner(Requirement.Rn requirement, int ownerId, boolean found, int expectedStatus) throws Exception {
+    void deleteOwner(OwnersRequirement.Rn requirement, int ownerId, boolean found, int expectedStatus) throws Exception {
         given(this.clinicService.findOwnerById(ownerId)).willReturn(found ? ownerMapper.toOwner(owners.get(0)) : null);
 
         ResultActions result = this.mockMvc.perform(delete("/api/owners/{ownerId}", ownerId)

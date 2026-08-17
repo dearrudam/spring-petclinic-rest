@@ -24,7 +24,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.samples.petclinic.capabilities.visit.Requirement;
+import org.springframework.samples.petclinic.capabilities.visit.VisitRequirement;
 import org.springframework.samples.petclinic.model.Owner;
 import org.springframework.samples.petclinic.model.Pet;
 import org.springframework.samples.petclinic.model.PetType;
@@ -55,7 +55,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.springframework.samples.petclinic.capabilities.visit.Requirement.Rn.*;
+import static org.springframework.samples.petclinic.capabilities.visit.VisitRequirement.Rn.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -113,7 +113,7 @@ class VisitRestControllerV1Tests {
     @ParameterizedTest(name = "{0}")
     @MethodSource("listVisitCases")
     @WithMockUser(roles = "OWNER_ADMIN")
-    void listVisits(Requirement.Rn requirement, boolean hasVisits, int expectedStatus) throws Exception {
+    void listVisits(VisitRequirement.Rn requirement, boolean hasVisits, int expectedStatus) throws Exception {
         given(this.clinicService.findAllVisits()).willReturn(hasVisits ? visits : List.of());
 
         ResultActions result = this.mockMvc.perform(get("/api/visits").accept(MediaType.APPLICATION_JSON));
@@ -133,7 +133,7 @@ class VisitRestControllerV1Tests {
     @ParameterizedTest(name = "{0}")
     @MethodSource("getVisitCases")
     @WithMockUser(roles = "OWNER_ADMIN")
-    void getVisit(Requirement.Rn requirement, int visitId, boolean found, int expectedStatus) throws Exception {
+    void getVisit(VisitRequirement.Rn requirement, int visitId, boolean found, int expectedStatus) throws Exception {
         given(this.clinicService.findVisitById(visitId)).willReturn(found ? visits.getFirst() : null);
 
         ResultActions result = this.mockMvc.perform(get("/api/visits/{visitId}", visitId)
@@ -154,7 +154,7 @@ class VisitRestControllerV1Tests {
     @ParameterizedTest(name = "{0}")
     @MethodSource("registerVisitCases")
     @WithMockUser(roles = "OWNER_ADMIN")
-    void registerVisit(Requirement.Rn requirement, LocalDate date, String description,
+    void registerVisit(VisitRequirement.Rn requirement, LocalDate date, String description,
                        boolean includeDescription, int expectedStatus) throws Exception {
         willAnswer(invocation -> {
             Visit visit = invocation.getArgument(0);
@@ -210,7 +210,7 @@ class VisitRestControllerV1Tests {
     @ParameterizedTest(name = "{0}")
     @MethodSource("updateVisitCases")
     @WithMockUser(roles = "OWNER_ADMIN")
-    void updateVisit(Requirement.Rn requirement, int visitId, String description,
+    void updateVisit(VisitRequirement.Rn requirement, int visitId, String description,
                      boolean includeDescription, int expectedStatus) throws Exception {
         Visit existingVisit = visits.getFirst();
         Pet associatedPet = existingVisit.getPet();
@@ -254,7 +254,7 @@ class VisitRestControllerV1Tests {
     @ParameterizedTest(name = "{0}")
     @MethodSource("deleteVisitCases")
     @WithMockUser(roles = "OWNER_ADMIN")
-    void deleteVisit(Requirement.Rn requirement, int visitId, boolean found, int expectedStatus) throws Exception {
+    void deleteVisit(VisitRequirement.Rn requirement, int visitId, boolean found, int expectedStatus) throws Exception {
         Visit visit = visits.getFirst();
         given(this.clinicService.findVisitById(visitId)).willReturn(found ? visit : null);
 

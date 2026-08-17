@@ -21,7 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.samples.petclinic.capabilities.visit.Requirement;
+import org.springframework.samples.petclinic.capabilities.visit.VisitRequirement;
 import org.springframework.samples.petclinic.model.*;
 import org.springframework.samples.petclinic.service.ClinicService;
 import org.springframework.samples.petclinic.util.EntityUtils;
@@ -197,7 +197,7 @@ abstract class AbstractClinicServiceTests {
 
     @Test
     @DisplayName("R6.1")
-    @Requirement(Requirement.Rn.R6_1)
+    @VisitRequirement(VisitRequirement.Rn.R6_1)
     void shouldFindVisitsByPetId() throws Exception {
         Collection<Visit> visits = this.clinicService.findVisitsByPetId(7);
         assertThat(visits.size()).isEqualTo(2);
