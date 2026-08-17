@@ -19,6 +19,7 @@ package org.springframework.samples.petclinic.rest.controller.v1;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.samples.petclinic.capabilities.specialties.SpecialtiesRequirement;
 import org.springframework.samples.petclinic.mapper.SpecialtyMapper;
 import org.springframework.samples.petclinic.model.Specialty;
 import org.springframework.samples.petclinic.rest.api.SpecialtiesApi;
@@ -51,6 +52,7 @@ public class SpecialtyRestControllerV1 implements SpecialtiesApi {
     }
 
     @PreAuthorize("hasRole(@roles.VET_ADMIN)")
+    @SpecialtiesRequirement({ SpecialtiesRequirement.Rn.R1_1, SpecialtiesRequirement.Rn.R1_2 })
     @Override
     public ResponseEntity<List<SpecialtyDto>> listSpecialties() {
         List<SpecialtyDto> specialties = new ArrayList<>();
@@ -62,6 +64,8 @@ public class SpecialtyRestControllerV1 implements SpecialtiesApi {
     }
 
     @PreAuthorize("hasRole(@roles.VET_ADMIN)")
+    @SpecialtiesRequirement({ SpecialtiesRequirement.Rn.R2_1, SpecialtiesRequirement.Rn.R2_2,
+        SpecialtiesRequirement.Rn.R2_3 })
     @Override
     public ResponseEntity<SpecialtyDto> getSpecialty(Integer specialtyId) {
         Specialty specialty = this.clinicService.findSpecialtyById(specialtyId);
@@ -72,6 +76,7 @@ public class SpecialtyRestControllerV1 implements SpecialtiesApi {
     }
 
     @PreAuthorize("hasRole(@roles.VET_ADMIN)")
+    @SpecialtiesRequirement({ SpecialtiesRequirement.Rn.R3_1, SpecialtiesRequirement.Rn.R3_2 })
     @Override
     public ResponseEntity<SpecialtyDto> addSpecialty(SpecialtyDto specialtyDto) {
         HttpHeaders headers = new HttpHeaders();
@@ -82,6 +87,8 @@ public class SpecialtyRestControllerV1 implements SpecialtiesApi {
     }
 
     @PreAuthorize("hasRole(@roles.VET_ADMIN)")
+    @SpecialtiesRequirement({ SpecialtiesRequirement.Rn.R4_1, SpecialtiesRequirement.Rn.R4_2,
+        SpecialtiesRequirement.Rn.R4_3, SpecialtiesRequirement.Rn.R4_4 })
     @Override
     public ResponseEntity<SpecialtyDto> updateSpecialty(Integer specialtyId, SpecialtyDto specialtyDto) {
         Specialty currentSpecialty = this.clinicService.findSpecialtyById(specialtyId);
@@ -94,6 +101,8 @@ public class SpecialtyRestControllerV1 implements SpecialtiesApi {
     }
 
     @PreAuthorize("hasRole(@roles.VET_ADMIN)")
+    @SpecialtiesRequirement({ SpecialtiesRequirement.Rn.R5_1, SpecialtiesRequirement.Rn.R5_2,
+        SpecialtiesRequirement.Rn.R5_3 })
     @Transactional
     @Override
     public ResponseEntity<SpecialtyDto> deleteSpecialty(Integer specialtyId) {
