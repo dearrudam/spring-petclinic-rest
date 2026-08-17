@@ -1100,24 +1100,18 @@ paths:
       responses:
         200:
           description: visits found and returned.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Visit'
-        304:
-          description: Not modified.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
+        404:
+          description: No visits found.
+          content:
+            application/json:
               schema:
-                type: string
+                $ref: '#/components/schemas/ProblemDetail'
         500:
           description: Server error.
           content:
@@ -1138,24 +1132,12 @@ paths:
               $ref: '#/components/schemas/VisitCreate'
         required: true
       responses:
-        200:
+        201:
           description: visit created successfully.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Visit'
-        304:
-          description: Not modified.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
         400:
           description: Bad request.
           content:
@@ -1164,6 +1146,44 @@ paths:
                 $ref: '#/components/schemas/ProblemDetail'
         404:
           description: Visit not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        500:
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+  /pets/{petId}/visits:
+    get:
+      tags:
+        - visits
+      operationId: listPetVisits
+      summary: Lists a pet's visits
+      description: Returns all visits associated with a pet, including an empty array.
+      parameters:
+        - name: petId
+          in: path
+          description: The ID of the pet.
+          required: true
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            example: 1
+      responses:
+        200:
+          description: Visits associated with the pet.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Visit'
+        400:
+          description: Bad request.
           content:
             application/json:
               schema:
@@ -1194,22 +1214,10 @@ paths:
       responses:
         200:
           description: Visit details found and returned.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Visit'
-        304:
-          description: Not modified.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
         400:
           description: Bad request.
           content:
@@ -1252,24 +1260,8 @@ paths:
               $ref: '#/components/schemas/VisitFields'
         required: true
       responses:
-        200:
-          description: Visit details found and returned.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Visit'
-        304:
-          description: Not modified.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
+        204:
+          description: Visit updated successfully.
         400:
           description: Bad request.
           content:
@@ -1305,24 +1297,8 @@ paths:
             minimum: 0
             example: 1
       responses:
-        200:
-          description: Visit details found and returned.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Visit'
-        304:
-          description: Not modified.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
+        204:
+          description: Visit deleted successfully.
         400:
           description: Bad request.
           content:

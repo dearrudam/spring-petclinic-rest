@@ -17,6 +17,7 @@
 /// ### R2: Consultar visita
 /// - R2.1 — Quando uma visita existente for solicitada por seu identificador, a capacidade deverá fornecer os dados da visita e o pet associado.
 /// - R2.2 — Se não existir visita com o identificador solicitado, então a capacidade deverá informar que a visita não foi encontrada.
+/// - R2.3 — Se um identificador negativo for informado para consulta, então a capacidade deverá rejeitar a solicitação.
 ///
 /// ### R3: Registrar visita
 /// - R3.1 — Quando uma visita com pet identificado e descrição válida for registrada, a capacidade deverá persistir a visita associada ao pet e atribuir um identificador à visita.
@@ -24,15 +25,18 @@
 /// - R3.3 — Quando uma visita for registrada sem data informada, a capacidade deverá atribuir a data atual à visita.
 /// - R3.4 — Quando uma visita com data atual ou futura e demais dados válidos for registrada, a capacidade deverá aceitar o registro.
 /// - R3.5 — Se uma visita for registrada com data anterior à data atual, então a capacidade deverá rejeitar o registro.
+/// - R3.6 — Se um identificador negativo de pet for informado, então a capacidade deverá rejeitar o registro.
 ///
 /// ### R4: Alterar visita
 /// - R4.1 — Quando novos valores válidos de data e descrição forem informados para uma visita existente, a capacidade deverá atualizar esses dados preservando a identidade e o pet associado.
 /// - R4.2 — Se não existir visita com o identificador informado para alteração, então a capacidade deverá informar que a visita não foi encontrada.
 /// - R4.3 — Se a nova descrição estiver ausente, vazia ou exceder 255 caracteres, então a capacidade deverá rejeitar a alteração.
+/// - R4.4 — Se um identificador negativo for informado para alteração, então a capacidade deverá rejeitar a solicitação.
 ///
 /// ### R5: Excluir visita
 /// - R5.1 — Quando a exclusão de uma visita existente for solicitada, a capacidade deverá remover a visita.
 /// - R5.2 — Se não existir visita com o identificador informado para exclusão, então a capacidade deverá informar que a visita não foi encontrada.
+/// - R5.3 — Se um identificador negativo for informado para exclusão, então a capacidade deverá rejeitar a solicitação.
 ///
 /// ### R6: Listar visitas de um pet
 /// - R6.1 — Quando as visitas de um pet existente forem solicitadas, a capacidade deverá fornecer todas as visitas associadas ao pet, inclusive uma coleção vazia quando ele não possuir visitas.

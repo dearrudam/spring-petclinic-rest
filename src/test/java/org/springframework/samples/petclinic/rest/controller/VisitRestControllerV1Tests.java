@@ -17,6 +17,8 @@
 package org.springframework.samples.petclinic.rest.controller;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -148,7 +150,11 @@ class VisitRestControllerV1Tests {
     }
 
     static Stream<Arguments> getVisitCases() {
-        return Stream.of(Arguments.of(R2_1, 2, true, 200), Arguments.of(R2_2, 999, false, 404));
+        return Stream.of(
+            Arguments.of(R2_1, 2, true, 200),
+            Arguments.of(R2_2, 999, false, 404),
+            Arguments.of(R2_3, -1, false, 400)
+        );
     }
 
     @ParameterizedTest(name = "{0}")
@@ -169,7 +175,7 @@ class VisitRestControllerV1Tests {
         if (includeDescription) {
             body.put("description", description);
         }
-        body.put("petId", 8);
+        body.put("petId", requirement == R3_6 ? -1 : 8);
 
         ResultActions result = this.mockMvc.perform(post("/api/visits")
             .content(objectMapper.writeValueAsString(body))
@@ -203,7 +209,8 @@ class VisitRestControllerV1Tests {
             Arguments.of(R3_3, null, "annual exam", true, 201),
             Arguments.of(R3_4, LocalDate.now(), "annual exam", true, 201),
             Arguments.of(R3_4, LocalDate.now().plusDays(1), "annual exam", true, 201),
-            Arguments.of(R3_5, LocalDate.now().minusDays(1), "annual exam", true, 400)
+            Arguments.of(R3_5, LocalDate.now().minusDays(1), "annual exam", true, 400),
+            Arguments.of(R3_6, LocalDate.now(), "annual exam", true, 400)
         );
     }
 
@@ -247,7 +254,8 @@ class VisitRestControllerV1Tests {
             Arguments.of(R4_2, 999, "follow-up", true, 404),
             Arguments.of(R4_3, 2, null, false, 400),
             Arguments.of(R4_3, 2, "", true, 400),
-            Arguments.of(R4_3, 2, "x".repeat(256), true, 400)
+            Arguments.of(R4_3, 2, "x".repeat(256), true, 400),
+            Arguments.of(R4_4, -1, "follow-up", true, 400)
         );
     }
 
@@ -270,7 +278,31 @@ class VisitRestControllerV1Tests {
     }
 
     static Stream<Arguments> deleteVisitCases() {
-        return Stream.of(Arguments.of(R5_1, 2, true, 204), Arguments.of(R5_2, 999, false, 404));
+        return Stream.of(
+            Arguments.of(R5_1, 2, true, 204),
+            Arguments.of(R5_2, 999, false, 404),
+            Arguments.of(R5_3, -1, false, 400)
+        );
+    }
+
+    @Test
+    @DisplayName("R6.1")
+    @VisitRequirement(R6_1)
+    @WithMockUser(roles = "OWNER_ADMIN")
+    void listPetVisits() throws Exception {
+        given(this.clinicService.findVisitsByPetId(8)).willReturn(visits);
+
+        this.mockMvc.perform(get("/api/pets/8/visits").accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(2))
+            .andExpect(jsonPath("$[0].id").value(2))
+            .andExpect(jsonPath("$[0].petId").value(8))
+            .andExpect(jsonPath("$[1].id").value(3))
+            .andExpect(jsonPath("$[1].petId").value(8));
+
+        given(this.clinicService.findVisitsByPetId(8)).willReturn(List.of());
+        this.mockMvc.perform(get("/api/pets/8/visits").accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
     }
 
     private static Visit visit(int id, Pet pet, LocalDate date, String description) {
