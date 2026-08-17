@@ -1859,7 +1859,7 @@ paths:
               $ref: '#/components/schemas/User'
         required: true
       responses:
-        200:
+        201:
           description: User created successfully.
           headers:
             ETag:
@@ -2398,10 +2398,12 @@ components:
           title: Roles
           description: The roles of an user
           type: array
+          minItems: 1
           items:
             $ref: '#/components/schemas/Role'
       required:
         - username
+        - roles
     Role:
       title: Role
       description: A role.
