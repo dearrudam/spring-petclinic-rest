@@ -38,28 +38,10 @@ paths:
       summary: Always fails
       description: Produces sample error response.
       responses:
-        200:
-          description: Never returned.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
-          content:
-            text/plain:
-              schema:
-                type: string
-        304:
-          description: Not modified.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
         400:
-          description: Bad request.
+          description: Always returned sample problem response.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
   /owners:
