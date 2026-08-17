@@ -19,6 +19,7 @@ package org.springframework.samples.petclinic.rest.controller;
 import org.springframework.samples.petclinic.rest.controller.v1.PetTypeRestControllerV1;
 import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -95,6 +96,7 @@ class PetTypeRestControllerV1Tests {
     }
 
     @Test
+    @DisplayName("R2.1")
     @WithMockUser(roles="OWNER_ADMIN")
     void testGetPetTypeSuccessAsOwnerAdmin() throws Exception {
     	given(this.clinicService.findPetTypeById(1)).willReturn(petTypes.get(0));
@@ -119,15 +121,17 @@ class PetTypeRestControllerV1Tests {
     }
 
     @Test
+    @DisplayName("R2.2")
     @WithMockUser(roles="OWNER_ADMIN")
     void testGetPetTypeNotFound() throws Exception {
     	given(this.clinicService.findPetTypeById(999)).willReturn(null);
         this.mockMvc.perform(get("/api/pettypes/999")
         	.accept(MediaType.APPLICATION_JSON))
-            .andExpect(status().isNotFound());
+        .andExpect(status().isNotFound());
     }
 
     @Test
+    @DisplayName("R1.1")
     @WithMockUser(roles="OWNER_ADMIN")
     void testGetAllPetTypesSuccessAsOwnerAdmin() throws Exception {
     	petTypes.remove(0);
@@ -160,6 +164,7 @@ class PetTypeRestControllerV1Tests {
     }
 
     @Test
+    @DisplayName("R1.2")
     @WithMockUser(roles="VET_ADMIN")
     void testGetAllPetTypesNotFound() throws Exception {
     	petTypes.clear();
@@ -170,6 +175,7 @@ class PetTypeRestControllerV1Tests {
     }
 
     @Test
+    @DisplayName("R3.1")
     @WithMockUser(roles="VET_ADMIN")
     void testCreatePetTypeSuccess() throws Exception {
     	PetType newPetType = petTypes.get(0);
@@ -182,6 +188,7 @@ class PetTypeRestControllerV1Tests {
     }
 
     @Test
+    @DisplayName("R3.2")
     @WithMockUser(roles="VET_ADMIN")
     void testCreatePetTypeError() throws Exception {
     	PetType newPetType = petTypes.get(0);
@@ -195,6 +202,7 @@ class PetTypeRestControllerV1Tests {
      }
 
     @Test
+    @DisplayName("R4.1")
     @WithMockUser(roles="VET_ADMIN")
     void testUpdatePetTypeSuccess() throws Exception {
     	given(this.clinicService.findPetTypeById(2)).willReturn(petTypes.get(1));
@@ -216,6 +224,7 @@ class PetTypeRestControllerV1Tests {
     }
 
     @Test
+    @DisplayName("R4.3")
     @WithMockUser(roles="VET_ADMIN")
     void testUpdatePetTypeError() throws Exception {
     	PetType newPetType = petTypes.get(0);
@@ -228,6 +237,7 @@ class PetTypeRestControllerV1Tests {
      }
 
     @Test
+    @DisplayName("R5.1")
     @WithMockUser(roles="VET_ADMIN")
     void testDeletePetTypeSuccess() throws Exception {
     	PetType newPetType = petTypes.get(0);
@@ -240,6 +250,7 @@ class PetTypeRestControllerV1Tests {
     }
 
     @Test
+    @DisplayName("R5.2")
     @WithMockUser(roles="VET_ADMIN")
     void testDeletePetTypeError() throws Exception {
     	PetType newPetType = petTypes.get(0);
@@ -249,6 +260,43 @@ class PetTypeRestControllerV1Tests {
     	this.mockMvc.perform(delete("/api/pettypes/999")
     		.content(newPetTypeAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
         	.andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("R2.3")
+    @WithMockUser(roles="OWNER_ADMIN")
+    void rejectsNegativePetTypeIdWhenGetting() throws Exception {
+        this.mockMvc.perform(get("/api/pettypes/-1").accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("R4.2")
+    @WithMockUser(roles="VET_ADMIN")
+    void reportsMissingPetTypeWhenUpdating() throws Exception {
+        given(this.clinicService.findPetTypeById(999)).willReturn(null);
+        this.mockMvc.perform(put("/api/pettypes/999")
+                .content("{\"id\":999,\"name\":\"dog\"}")
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("R4.4")
+    @WithMockUser(roles="VET_ADMIN")
+    void rejectsNegativePetTypeIdWhenUpdating() throws Exception {
+        this.mockMvc.perform(put("/api/pettypes/-1")
+                .content("{\"id\":1,\"name\":\"dog\"}")
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("R5.3")
+    @WithMockUser(roles="VET_ADMIN")
+    void rejectsNegativePetTypeIdWhenDeleting() throws Exception {
+        this.mockMvc.perform(delete("/api/pettypes/-1").accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isBadRequest());
     }
 
 }
